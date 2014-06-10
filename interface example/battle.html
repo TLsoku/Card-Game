@@ -1,0 +1,492 @@
+<html>
+<head>
+<title>Game screen mockup</title>
+<style>
+div {
+	border: 1px solid black;
+	box-sizing: border-box;
+	position: absolute;
+	font-size: 2vmin;
+}
+
+.field{
+	left: 30%;
+	width: 70%;
+	height: 40%;
+	background-color: #3c3;
+}
+
+.stats {
+	left: 20%;
+	width: 10%;
+	height: 40%;
+	background-color: #c33;
+}
+
+.player {
+	top: 40%;
+}
+
+.chat {
+	width: 20%;
+	height: 100%;
+	background-color: #cc3;
+	text-align: bottom;
+}
+
+.hand {
+	background-color: #c3c;
+	top: 80%;
+	left: 30%;
+	width: 70%;
+	height: 20%;
+	overflow:auto;
+}
+
+.detailed {
+	width: 30%;
+	height: 80%;
+	background-image: url('cardBase.png');
+	background-color: white;
+	background-size: contain;
+	opacity:0.8;
+	z-layer:1;
+}
+
+.menubuttons {
+	width: 10%;
+	height: 20%;
+	top: 80%;
+	left: 20%;
+	background-color: #3cc;
+}
+
+.thumbnail {
+	height: 90%;
+	top:9%;
+	width:10%;
+}
+
+.field .thumbnail {
+	height: 40%;
+	top: 29%
+}
+
+.targeting {
+	height:100%;
+	width:100%;
+	position:absolute;
+	top:0px;
+	left:0px;
+}
+
+#shader {
+	z-index: 9;
+	height: 100%;
+	width: 100%;
+	top: 0px;
+	left: 0px;
+	position: absolute;
+	background-color: #111;
+	opacity: 0.4;
+}
+</style>
+</head>
+<body>
+<script src="jsoncardsabilities.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="underscore-min.js"></script>
+<div id='gameScreen' style='width:99%; height:99%;'>
+	<div class="field opponent">Opponent's play field </div>
+	<div class="field player">Your play field </div>
+	<div class="stats opponent">Opponent's stats </div>
+	<div class="stats player">Your stats</div>
+	<div class="chat">Chat</div>
+	<div class="hand">Your hand</div>
+	<div class='detailed' style='display:none'>
+		<img style='position: absolute; top: 8%; left: 3.6%; height: 47.8%; width: 86.1%;' src='http://puu.sh/6dnz6.jpg'/>
+		<div class='title' style='border: none; font-size: 2.5em; top: 1%; left: 15%;'>Merlin</div>
+		<div class='description' style='top: 62%; padding: 7px; border:none'></div>
+	</div>
+	<div class='menubuttons'>Buttons</div>
+</div>
+<div id='shader' style='display:none'></div>
+
+<script>
+var events = $({});
+
+var Display = {
+	details: $("#gameScreen .detailed"),
+	thumbnail: null,
+	targetImage: $("<img class='targeting' src='target.png'/>"),
+	init: function() {
+		var t = this;
+		var thumb = $("<div class='thumbnail'> <img style='height:100%; width:100%'/> </div>");
+		thumb.mouseover(function() {t.showDetails($(this).data());})
+			 .mouseout(function() {t.showDetails();});
+		this.thumbnail = thumb;
+	},
+	addToHand: function(card){
+		var t = this;
+		var i = new Image();
+		i.src = card.image;
+		i.onload = function(){
+
+			t.thumbnail.clone(true).appendTo($("#gameScreen .hand")).data(card)
+				.click(function() {
+					var playedSuccess = false;
+					if (card instanceof Creature) playedSuccess = card.owner.playCreature(card);
+					else playedSuccess = card.owner.playSpell(card);
+					if (playedSuccess) t.removeFromHand(this);
+				})
+				.find("img").attr("src", card.image);
+			t.positionThumbnails($("#gameScreen .hand"));
+		};
+	},
+	removeFromHand: function(div){
+	//Removes a card from your hand, passing in a div.  Doesn't have to be a card, since you remove by clicking something
+		$(div).remove();
+		this.positionThumbnails($("#gameScreen .hand"));
+	},
+	addToField: function(card, player){
+	//Pass in a card and either true(player's side) or false(opponent's side)
+		t = this;
+		var $placement = $("#gameScreen .field." + (player ? "player" : "opponent")); //Div where the card should be placed
+		(card.div = this.thumbnail.clone(true)).appendTo($placement).data(card)
+			.find("img").attr("src", card.image);
+		this.positionThumbnails($placement);
+
+	},
+	removeFromField: function(card){
+	//Removes a card from the field
+		card.div.remove();
+		this.positionThumbnails($("#gameScreen .field.opponent"));
+		this.positionThumbnails($("#gameScreen .field.player"));
+	},
+	showDetails: function(card) {
+	//Pass in nothing to hide the details that are currently displaying
+
+		if (card == undefined){
+			this.details.css("display", "none");
+			return;
+		}
+		this.details.find("img").attr("src", card.image);
+		this.details.find(".title").html(card.name);
+		this.details.find(".description").html(card.text);
+		this.details.css("display", "block");
+	},
+	positionThumbnails: function($div){
+		//Arranges cards in a div to prevent holes.
+		$div.children("div").each(function(index){
+			$(this).css("left", (index*10) + "%");
+		});
+	},
+	showTargetting: function(){
+		$(".field .thumbnail").append(this.targetImage.clone(true)).on("click.target", function(){
+			events.trigger("target", $(this).data());
+			$(".field .thumbnail").off("click.target");
+			$(".targeting").remove();
+		});
+	}
+}
+Display.init();
+//_.each(_.sample(allCards, 13), function(c) { Display.addToHand(c);});
+</script>
+
+<script type = "text/javascript">
+
+
+
+function Card(original) { //Object to represent a card.  Pass in the original card object from the cards data file
+	this.name = original.name;
+	this.cost = original.cost;
+	this.text = original.text;
+	this.image = original.image;
+
+	this.owner; //Stores the owner of the card, valid regardless of where the card is
+}
+
+Card.prototype.toString = function(){
+	return "A card called " + this.name;
+}
+
+
+function Spell(original){  //Tentatively representing a spell
+	Card.call(this, original);
+	this.effect = original.effect;
+}
+
+Spell.prototype = Object.create(Card.prototype);
+
+Spell.prototype.play = function() {
+	this.effect();
+	console.log("Played a " + this.name);
+}
+
+Spell.prototype.dealDamage = function(target, amount) {
+	target.takeDamage(amount);
+}
+
+function Creature(original, state) { //Object to represent a single Creature in the game.  Inherits from Card.
+/*  * name: The Creature's name
+	* hp: The Creature's max hp
+	* atk: The Creature's attack
+	* state: Where the Creature is.  Graveyard, hand, field, exile, deck, maybe others
+	* special: The functions that should be called for special events: ETB, death, EoT, etc
+*/
+
+	Card.call(this, original); //Calls parent constructor
+
+	this.maxHP = original.defense;
+	this.HP = original.defense;
+	this.atk = original.attack;
+	this.state = state || "";
+	this.controller; //Variable to store the controller of the creature, only valid while it is in play
+
+	//Stores special functions related to the Creature, such as what happens on ETB, death, EoT, etc
+	this.func = original.special || [];
+}
+
+Creature.prototype = Object.create(Card.prototype); //Inheriting line
+
+Creature.prototype.fight = function(opp) {
+	console.log(this.name + " and " + opp.name + " fight!");
+	this.takeDamage(opp.atk);
+	opp.takeDamage(this.atk);
+
+}
+
+Creature.prototype.takeDamage = function(amount) {
+	this.HP = this.HP - amount;
+	if (this.HP <= 0)
+		this.die();
+}
+
+Creature.prototype.die = function() {
+	if (this.func["die"] != undefined)  //Has a special death function which should specify eventual state and other things
+		this.state = this.func["die"].call(this);
+	else {
+		this.state = "graveyard";
+		this.controller.removeFromCreatures(this);
+	}
+
+	console.log(this.name + " has died");
+}
+
+Creature.prototype.play = function(player){
+	this.state = "field";
+	console.log(player + " played a " + this.name);
+	if (this.func["play"])
+		this.func["play"].call(this);
+}
+
+Creature.prototype.turnEnd = function() {
+	if (this.func["end"])
+		this.func["end"].call(this);
+}
+
+Creature.prototype.turnStart = function(){
+	if (this.func["start"])
+		this.func["start"].call(this);
+}
+
+Creature.prototype.toString = function() {
+	return this.name + ":  " + this.atk + " attack, " + this.HP + "/" + this.maxHP + " health.  Costs " + this.cost;
+}
+
+
+function Player(deck) { //Object to represent a player in the game.
+/*  *
+	*
+	*
+	*
+	*
+*/
+	this.hand = [];
+	this.creatures=[];
+
+	//Create the deck, shuffle it, and set all the cards owners
+	this.deck = deck || [];
+	this.deck = _.shuffle(this.deck);
+	_.each(this.deck, function(card){
+		card.owner = this;
+	}, this);
+
+	this.pointLands = [];
+	this.powerLands = [];
+
+	this.points = 0;
+	this.power = 0;
+
+	this.turn = {
+		player: this,
+		start: function() {
+			this.playedPoints = false;
+			this.playedPower = false;
+		}
+	}
+
+}
+
+Player.prototype.upkeep = function(){
+	this.points += this.pointLands.length;
+	this.power += this.powerLands.length;
+	this.creatures.forEach(function(creature) {creature.turnStart();});
+	this.draw(1);
+}
+
+Player.prototype.draw = function(number) {
+	for (var i = 0; i < number; i++){
+		var nextCard = this.deck.shift();
+		this.addToHand(nextCard);
+	}
+}
+
+Player.prototype.addToHand = function(card){ //Adds a card to a player's hand.  Pass in the card (creature or spell) as a variable
+	card.state = "hand";
+	this.hand.push(card);
+	Display.addToHand(card);
+}
+
+Player.prototype.removeFromHand = function(card) {  //Removes the specified card from the player's hand
+	this.hand = _.without(this.hand, card);
+}
+
+Player.prototype.playAsPoint = function(card) { //Plays a card as a points resource
+	card.state = "land";
+	this.pointLands.push(card);
+	this.removeFromHand(card);
+}
+
+Player.prototype.playAsPower = function(card) { //Plays a card as a power resource
+	card.state = "land";
+	this.powerLands.push(card);
+	this.removeFromHand(card);
+}
+
+Player.prototype.addToCreatures = function(card) {
+	card.state = "field";
+	card.controller = this;
+	this.creatures.push(card);
+}
+
+Player.prototype.removeFromCreatures = function(card) {
+	this.creatures = _.without(this.creatures, card);
+	Display.removeFromField(card);
+}
+
+Player.prototype.playCreature = function(card) {
+	if (this.points >= card.cost) {//Have enough to play the card
+		this.points -= card.cost;
+		this.removeFromHand(card);
+		this.addToCreatures(card);
+		Display.addToField(card,true);
+		card.play(this);
+		return true;
+
+	}
+	else
+		console.log("not enough points to play " + card.name);
+}
+
+Player.prototype.playSpell = function(card) {
+	if (this.power >= card.cost) {//Have enough to play the card
+		this.power -= card.cost;
+		this.removeFromHand(card);
+		card.play(this);
+		return true;
+	}
+
+	else
+		console.log("not enough power to play " + card.name);
+}
+
+
+
+Player.prototype.toString = function() {
+	return "HAND: \n" + this.hand.join("\n") + "\nFIELD: \n" + this.creatures.join("\n") + "\nPoints: " + this.points + "\tPower: " + this.power;
+}
+
+
+
+var GAME = {
+	cards: [],
+	players: [],
+	init: function() {
+		/*var a = new Creature("cirno", 25,10,"", {"die" : function() {console.log("Alas, " + this.name + " is dead"); return "graveyard";}});
+		var b = new Creature("Sakuya", null, {"play": function() {
+			GAME.chooseTarget(function(target) {this.controller.removeFromCreatures(target); this.controller.addToHand(target);}, this);
+		}});
+		var c = new Creature("wood fairy", 20,8,"");
+		var d = new Creature("flan", 30,25,"", {"start" : function() {console.log("Started with a " + this.name + " in play.");}});
+		var e = new Creature("Shizuha", null, {"die" : function() {
+			GAME.promptChoice("Turn Shizuha into what type of land?", {
+									"Point": function() {this.controller.playAsPoint(this);},
+									"Power": function() {this.controller.playAsPower(this);}
+								 }, this);
+			this.controller.removeFromCreatures(this);
+			return "land";
+		}});*/
+
+		var e = this.createCard("Shizuha");
+		var d = this.createCard("Shizuha");
+		var a = this.createCard("Shizuha");
+		var b = this.createCard("Sakuya");
+		var c = this.createCard('Geyser Eruption');
+
+		this.cards = [e,d,c];
+		this.players.push(new Player([a,b,c,d,e]));
+		this.players[0].points = 40;
+		this.players[0].power = 40;
+		this.players[0].draw(5);
+	},
+	chooseTarget: function(callback, context) { //Prompts the player to choose a target, then calls the callback function on the chosen target
+		console.log("choose a target");
+		Display.showTargetting();
+		events.one("target", function(event, target) {console.log("Targetted " + target); callback.call(context,target);}); //Simulates waiting for user input by pausing for 2 seconds
+	},
+	promptChoice: (function() {
+		//Makes a choice prompt box, has 3 arguments.
+		//First is the text for the prompt
+		//Second is an array of functions where the key is what is displayed on the button
+		//Third is the context (this) for the called function
+		var $choiceBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:25%; top: 35%; width: 30%; height: 10%; z-index:10'> </div>");
+		var $choiceText = $("<div style='border: none; position:absolute; left:25%;'> Here is the choice text </div>");
+		var $buttonsRow = $("<div style='border:none; position:absolute; left:25%; top:60%;'></div>");
+
+		$choiceBox.append($choiceText).append($buttonsRow);
+		return function(text, choices, context) {
+
+			$("#shader").css("display", "block");
+			$choiceText.html(text);
+			$buttonsRow.html("");
+
+
+			_.keys(choices).forEach(function(choice) {
+				//Creates a bunch of buttons, each one calling one of the passed functions.
+				$button = $("<button>" + choice + "</button>");
+				$button.click(function() { choices[choice].call(context);});
+				$button.click(function() {$("#shader").css("display", "none"); $choiceBox.remove();});
+				$buttonsRow.append($button);
+			});
+
+			$("body").append($choiceBox);
+		}
+	})(),
+	createCard: function(name){
+		var template = _.find(allCards, function(c) {return c.name === name;});
+		if (template.type == "Creature") return (new Creature(template));
+		else return (new Spell(template));
+	}
+}
+GAME.init();
+
+/*GAME.promptChoice("Pick one...", {
+								"Yes": function() {this.players[0].playAsPoint(this.players[0].hand[0]); console.log("yes");},
+								"No": function() {console.log("no");},
+								"Cancel": function() {console.log("cancel");}
+							 }, GAME);*/
+</script>
+
+</body>
+</html>

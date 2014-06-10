@@ -1,12 +1,4 @@
-A bit of a disorganized README for now
+Very, very basic start of the user interface, with a tiny bit of logic to test out some interactions.
 
-APP.js is the server.  Run using nodejs from the command line, it takes two arguments.  The first is the port to listen on, which is mandatory, and the second is the welcome message if you want to override the default.
-
-node APP.js port message
-
-to run it, you'll need a few modules, install them with npm (comes with nodejs)
-
-npm install socket.io
-npm install underscore
 
 index.html is the page that will be seen by clients.  Make sure the two files are in the same directory.
