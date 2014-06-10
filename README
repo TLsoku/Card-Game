@@ -1,4 +1,5 @@
-Very, very basic start of the user interface, with a tiny bit of logic to test out some interactions.
+Very, very basic start of the user interface, with a tiny bit of logic to test out some interactions.  Just open battle.html in the web browser of your choice.
 
 
-index.html is the page that will be seen by clients.  Make sure the two files are in the same directory.
+
+Chat client still exists (use node js to run APP.js) but is not the main focus and is a bit outdated.
