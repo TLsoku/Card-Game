@@ -130,7 +130,6 @@ details: $("#gameScreen .detailed"),
             statContainer.append($("<p>" + key + ":  " + stats[key] + "</p>"));
     }
 }
-Display.init();
 
 var GAME = {
     cards: [],
@@ -195,4 +194,5 @@ var GAME = {
         else return (new Spell(template));
     }
 }
+Display.init();
 GAME.init();

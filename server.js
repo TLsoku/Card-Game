@@ -9,17 +9,16 @@ function validDeck(deck) {
 }
 
 function gamePrep(socket) {
-	//Some things commented out to stay in single-player mode
 
 	socket.on('turn', function(data){
-		socket/*.broadcast*/.emit('turn', data);
+		socket.broadcast.emit('turn', data);
 	});
-	/*socket.on('stats', function(data){
+	socket.on('stats', function(data){
 		data.player = 'opponent';
 		socket.broadcast.emit('stats', data);
-	});*/
+	});
 	socket.on('addToField', function(card){
-		socket/*.broadcast*/.emit('addToField', card);
+		socket.broadcast.emit('addToField', card);
 	});
 	
 	
@@ -45,9 +44,10 @@ var app = require('http').createServer(handler)
   , fs = require('fs')
   , url = require('url')
   , repl = require('repl')
-  , _ = require('underscore')
+  , _ = require('underscore');
   //Below are included files created for this project
-  , cards = require('./cards');
+  //, cards = require('./cards');
+
 
 var blacklist = []; //Blacklisted IP addresses (banned users)
 
@@ -218,7 +218,7 @@ cons.context.unban = unban;
 cons.context.listBans = listBans;
 cons.context.setAuth = setAuth;
 cons.context.listUsers = listUsers;
-cons.context.getCard = cards.getCard;
+//cons.context.getCard = cards.getCard;
 cons.context.showChat = false;
 
 

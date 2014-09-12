@@ -1,13 +1,13 @@
 var CardUtils = {
 
-thumb: $("<span class='thumbnail' > <img style='height:100%; width:100%' src='images/cardBase.png'/>  <img class='cardart'/></span>"),
+thumb: $("<span class='thumbnail' > <img style='height:100%; width:100%' src='/images/cardBase.png'/>  <img class='cardart'/></span>"),
        makeThumbnail: function(name) {
            var cardData = _.findWhere(allCards, {'name': name})
                , theCard = this.thumb.clone(true)
                , t = this;
 
            theCard.find("img.cardart").attr("src", cardData.image);
-           if  (cardData.type.match("Spell")) theCard.find("img:first").attr("src", 'images/spellBase.png');
+           if  (cardData.type.match("Spell")) theCard.find("img:first").attr("src", '/images/spellBase.png');
            theCard.mouseover(function(e) {t.magnifyCard(cardData, e.pageX+5, e.pageY+5);})
                .mouseout(function() {t.magnifyCard();})
                .click(function() { DeckBuilder.addToDeck(cardData); DeckBuilder.addToList(cardData);});

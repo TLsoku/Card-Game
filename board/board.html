@@ -2,17 +2,10 @@
 
 <head>
 <title>Game screen mockup</title>
-<link rel="stylesheet" type="text/css" href="deckbuilder.css">
+<link rel="stylesheet" type="text/css" href="board.css">
 </head>
 
 <body>
-<script src="/socket.io/socket.io.js"></script>
-<script src="../jsoncards.js"></script>
-<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src="../underscore-min.js"></script>
-<script src="board.js"></script>
-<script src="cardPrototype.js"></script>
-<script src="player.js"></script>
 
 <div id='gameScreen' style='width:99%; height:99%;'>
     <div class="field opponent">Opponent's play field </div>
@@ -32,6 +25,13 @@
 
 <div id='shader' style='display:none'></div>
 
+<script src="/socket.io/socket.io.js"></script>
+<script src="../jsoncards.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="../underscore-min.js"></script>
+<script src="cardPrototype.js"></script>
+<script src="player.js"></script>
+<script src="board.js"></script>
 </body>
 
 </html>

@@ -44,7 +44,7 @@ div {
 .detailed {
 	width: 25%;
 	height: 69%;
-	background-image: url('images/cardBase.png');
+	background-image: url('../images/cardBase.png');
 	background-color: white;
 	background-size: contain;
 	z-layer:1;
