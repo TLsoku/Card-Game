@@ -1,0 +1,50 @@
+<html>
+
+<head>
+<title> Deck builder</title>
+<link rel="stylesheet" type="text/css" href="deckbuilder.css">
+</head>
+
+<body>
+<script src="../jsoncards.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="../underscore-min.js"></script>
+<!--<script src="jquery-ui-1.10.4.min.js"></script>-->
+<script src="deckbuilder.js"></script>
+
+<div class='detailed' style='display:none'>
+    <img style='position: absolute; top: 8%; left: 4%; height: 47.8%; width: 86.1%;'/>
+    <div class='title' style='border: none; font-size: 2.5em; top: 1%; left: 17%;'> </div>
+    <div class='description' style='top: 62%; padding: 7px; border:none'> </div>
+</div>
+
+<div id='filters'>
+    Creatures: <input type='checkbox' id='creatures' checked='checked'/>
+    Spells: <input type='checkbox' id='spells' checked='checked'/>
+    Fields: <input type='checkbox' id='fields' checked='checked'/>
+    </br>
+    Sort:
+    <select>
+        <option>Alphabetical</option>
+        <option>Cost</option>
+    </select>
+    </br>
+    Search: <input type='text'></input>
+</div>
+
+<input id='deckName' type='text' value='My deck'/>
+<button id='save'>Save</button>
+<button id='load'>Load</button>
+<button id='export'>Export to cockatrice</button>
+<br>
+
+<div id='deckListing'>
+    Total card count: <span id='count'>0</span> 
+</div>
+
+<div id="cardpool"> </div>
+
+<div id='chatdiv'> </div>
+
+</body>
+</html>

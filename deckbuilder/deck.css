@@ -1,0 +1,55 @@
+/*div {        position: absolute;}*/
+
+.detailed{
+		position: absolute;
+        background-image: url('../images/cardBase.png');
+        background-color: white;
+        background-size: contain;
+	    font-size: 2vmin;
+        width: 23%;
+	    height: 70%;
+		z-index: 1;
+}
+
+.detailed div{
+	position: absolute;
+}
+.detailed img{
+	position: absolute;
+}
+img.cardart{
+	position: relative;
+	left:5px;
+	top:-173px;
+	width:143px;
+	height:90px;
+}
+
+.thumbnail {
+	height: 185px;/*30%;*/
+	width: 170px;/*17%;*/
+	border: 2px solid;
+	float: left;
+	margin: 1%;
+}
+	
+#deckListing {
+	width: 18%;
+	background: red;
+}
+
+#cardpool {
+	position: absolute;
+	background: blue;
+	left: 19%;
+	top: 10%;
+	height: 85%;
+	width: 80%;
+	overflow: auto;
+}
+
+#filters {
+	position: absolute;
+	left: 80%;
+	background: lawngreen;
+}

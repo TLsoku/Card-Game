@@ -1,0 +1,85 @@
+div {
+	border: 1px solid black;
+	box-sizing: border-box;
+	position: absolute;
+	font-size: 2vmin;
+}
+
+.field{
+	left: 25%;
+	width: 75%;
+	height: 40%;
+	background-color: #3c3;
+	overflow: auto;
+}
+
+.stats {
+	left: 15%;
+	width: 10%;
+	height: 40%;
+	background-color: #c33;
+}
+
+.player {
+	top: 40%;
+}
+
+.chat {
+	width: 15%;
+	height: 100%;
+	background-color: #cc3;
+	text-align: bottom;
+	overflow:auto;
+}
+
+.hand {
+	background-color: #c3c;
+	top: 80%;
+	left: 25%;
+	width: 75%;
+	height: 20%;
+	overflow:auto;
+}
+
+.detailed {
+	width: 25%;
+	height: 69%;
+	background-image: url('images/cardBase.png');
+	background-color: white;
+	background-size: contain;
+	z-layer:1;
+}
+
+.menubuttons {
+	width: 10%;
+	height: 20%;
+	top: 80%;
+	left: 15%;
+	background-color: #3cc;
+}
+
+.thumbnail {
+	height: 90%;
+	top:9%;
+	width:9%;
+}
+
+.field .thumbnail {
+	height: 40%;
+	top: 29%
+}
+
+.glow {
+	border: 6px solid yellow;
+}
+
+#shader {
+	z-index: 9;
+	height: 100%;
+	width: 100%;
+	top: 0px;
+	left: 0px;
+	position: absolute;
+	background-color: #111;
+	opacity: 0.4;
+}

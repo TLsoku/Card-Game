@@ -1,0 +1,37 @@
+<html>
+
+<head>
+<title>Game screen mockup</title>
+<link rel="stylesheet" type="text/css" href="deckbuilder.css">
+</head>
+
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="../jsoncards.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="../underscore-min.js"></script>
+<script src="board.js"></script>
+<script src="cardPrototype.js"></script>
+<script src="player.js"></script>
+
+<div id='gameScreen' style='width:99%; height:99%;'>
+    <div class="field opponent">Opponent's play field </div>
+    <div class="field player">Your play field </div>
+    <div class="stats opponent">Opponent's stats </div>
+    <div class="stats player">Your stats<br></div>
+    <div class="chat">Chat</div>
+    <div class="hand">Your hand</div>
+    <div class='detailed' style='display:none'>
+        <img style='position: absolute; top: 8%; left: 3.6%; height: 47.8%; width: 86.1%;'/>
+        <div class='title' style='border: none; font-size: 2.5em; top: 1%; left: 15%;'> </div>
+        <div class='description' style='top: 62%; padding: 7px; border:none'> </div>
+    </div>
+
+    <div class='menubuttons'>Buttons</div>
+</div>
+
+<div id='shader' style='display:none'></div>
+
+</body>
+
+</html>
