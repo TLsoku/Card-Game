@@ -1,95 +1,17 @@
 <html>
 <head>
-    <title> RIP Comodo </title>
-	<style type="text/css">
-	body {background-color: #FFFFFF;}
-	
-	#chat {
-		width: 90%;
-		height: 80%;
-		background-color: #F2F2F2;
-		overflow: auto;
-	}
-	</style>
-  </head>
-  <body>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-  <div id = "chat">
-	
-  </div>
-  <input id = "typing" type='text' size='100'> </input>
-  <button id="submit">Submit</button>
-  <button id="clear">Clear chat</button>
-  
-  <div style="position: absolute; top:95%;">
-  Username: <input id = "username" type='text' value='Guest'></input>
-  Colour: <input id = "colour" type='text' value='000000'></input>
-  Scroll on new messages: <input id='scroller' type='checkbox'></input>
-  </div>
-  
-  <script>
-  
-  window.onfocus = function() {document.title = "RIP Comodo";}
-  
-  var height = 600;
-  var socket = io.connect();
-  
-  function submitText(){
-    var yourText = $("#typing").val();
-	var yourName = $("#username").val();
-	var yourColour = $("#colour").val();
-	
-	yourName = $("<div>").text(yourName).html();
-	yourText = $("<div>").text(yourText).html();
-	yourColour = $("<div>").text(yourColour).html();
-	
-	if (yourColour[0] != 'r') yourColour = '#' + yourColour;
-	
-	if (yourText != "")
-		socket.emit('chat', {name: yourName, message: yourText, colour: yourColour});
-    $("#typing").val("");
-	
-  }
-  
-  function showText(data){ //Shows chat mesages, which should have a colour and a name
-    $("#chat").append("<p><span style='color:" + data.colour + "'>" + data.name + ":  " + data.message + "</span></p>");
-    
-	height += 30; //The scrolled height for the bottom of the text increases with every message
-	
-	if ($("#scroller").prop("checked"))
-		$("#chat").scrollTop(height);
-	
-	if (!document.hasFocus()) document.title = "New messages!";
-  }
-  
-  function showNotify(data) { //Shows notifications, which don't have a name or a colour
-    $("#chat").append("<p><span style='font-weight: bold'> " + data.message + "</span></p>");
-    $("#chat").scrollTop((height = height+50));
-  }
+<title> Index landing page</title> 
+<style>
+a {
+display: block;
+}
+</style>
+</head>
+<body>
 
-  socket.on('chatReceived', function(data) {showText(data);});
-  socket.on('pmReceived', function(data) {data.name = "PM from " + data.name; showText(data);});
-  socket.on('system', function(data) {showNotify(data);});
-  
-  
+<a href='board/board.html'>Demo</a>
+<a href='deckbuilder/deck.html'>Deckbuilder</a>
+<a href='chat.html'>Chat</a>
 
-//Setup for buttons  
-  $("#colour").blur(function() {
-	yourColour = $("#colour").val();
-	if (yourColour[0] != 'r') yourColour = '#' + yourColour;
-	$("#typing").attr("style", "color:" + yourColour);
-  });
-  
-  //Submit and clear buttons
-  $("#submit").on("click", submitText);
-  $("#clear").on("click", function() { $("#chat p").remove();});
-  
-  $("#typing").keydown(function(e) {
-	if (e.which === 13)
-		submitText();
-  });
-  
-  </script>
-  </body>
+</body>
 </html>
