@@ -145,7 +145,7 @@ clear: function(){
 save: function(name){
           localStorage[name] = JSON.stringify(this.deck);
           alert("Saved deck with name " + name);
-          $.post("decksave", JSON.stringify(this.deck));
+          $.post("/decksave", JSON.stringify(this.deck));
       },
 
 load: function(name){

@@ -99,9 +99,14 @@ Creature.prototype.turnEnd = function() {
         this.func["end"].call(this);
 }
 
+//Returns a function that controls what happens to the creature at the start of the turn.
 Creature.prototype.turnStart = function(){
-    if (this.func["start"])
-        this.func["start"].call(this);
+    var c = this;    
+    return function(){
+        if (c.func["start"])
+            return c.func["start"].call(c);
+        return false;
+    }
 }
 
 Creature.prototype.toString = function() {

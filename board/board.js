@@ -140,6 +140,9 @@ var GAME = {
            location.href = '/deck.html';
         }
 
+events.trigger("log", "Use ctrl+click to play as a point essence.");
+events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remove
+
         var storedDeck = JSON.parse(localStorage['My deck']);
 
         //Create a card object for each thing in the deck
@@ -165,13 +168,12 @@ var GAME = {
         //First is the text for the prompt
         //Second is an array of functions where the key is what is displayed on the button
         //Third is the context (this) for the called function
-        //Fourth is a function to get called after the choice, regardless of what it is.  Optional.
         var $choiceBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $choiceText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $buttonsRow = $("<div style='border:none; position:absolute; top:60%; width: 100%; text-align:center;'></div>");
 
         $choiceBox.append($choiceText).append($buttonsRow);
-        return function(text, choices, context, after) {
+        return function(text, choices, context) {
 
             $("#shader").css("display", "block");
             $choiceText.html(text);
@@ -180,19 +182,102 @@ var GAME = {
             _.keys(choices).forEach(function(choice) {
                 //Creates a bunch of buttons, each one calling one of the passed functions.
                 $button = $("<button style='margin: 5px;  display: inline; '>" + choice + "</button>");
-                $button.click(function() { choices[choice].call(context);  after && after();});
-                $button.click(function() {$("#shader").css("display", "none"); $choiceBox.remove();});
+                $button.click(function() {
+                    choices[choice].call(context); 
+                    $("#shader").css("display", "none");
+                    $choiceBox.remove();
+                    events.trigger("madeChoice")
+                });
                 $buttonsRow.append($button);
             });
 
             $("body").append($choiceBox);
         }
     })(),
+    promptResourcePayment: (function() {
+
+        var $paymentBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
+        var $paymentText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
+        var $paymentRow = $("<div style='border:none; position:absolute; top:50%; width: 100%; text-align:center;'></div>");
+        var $payPoints = $("<input type='number' min='0'>");
+        var $payPower = $("<input type='number' min='0'>");
+        
+        var $buttonsRow = $("<div style='border:none; position:absolute; top:65%; width: 100%; text-align:center;'></div>");
+        var $confirmButton = $("<button> Confirm </button>");
+        var $cancelButton = $("<button> Cancel </button>");
+
+        $paymentRow.append(($("<span>Point amount:</span>")).append($payPoints));
+        $paymentRow.append(($("<span>  Power amount:</span>")).append($payPower));
+        $buttonsRow.append($confirmButton).append($cancelButton);
+        
+        $paymentBox.append($paymentText).append($paymentRow).append($buttonsRow);
+
+        return function(text, cost, player, effect, context) {
+
+            $("#shader").css("display", "block");
+            $paymentText.html(text);
+        
+            $confirmButton.click(function() {
+                    var pointsPaid = parseInt($payPoints.val(), 10);
+                    var powerPaid = parseInt($payPower.val(),10);
+console.log(powerPaid);
+console.log(pointsPaid);
+console.log(player.points);
+console.log(player.power);
+console.log(cost);
+                    if (pointsPaid <= player.points && pointsPaid  >= 0 && powerPaid >= 0 && powerPaid <= player.points && pointsPaid + powerPaid == cost) {
+console.log("happening")
+                        player.points -= pointsPaid;
+                        player.power -= powerPaid;
+                        effect.call(context); 
+                        $("#shader").css("display", "none");
+                        $paymentBox.remove();
+                        events.trigger("madeChoice")
+                    }            
+            });
+          
+            $cancelButton.click(function() {
+                        $("#shader").css("display", "none");
+                        $paymentBox.remove();
+                        events.trigger("madeChoice")
+            });
+
+            $("body").append($paymentBox);
+        }
+    })(),
     createCard: function(name){
         var template = _.find(allCards, function(c) {return c.name === name;});
         if (template.type == "Creature") return (new Creature(template));
         else return (new Spell(template));
-    }
+    },
+
+    // Utility for calling a series of functions in a specified order, ensuring that they occur in that order
+    // even if some require waiting for user input.
+    // How to use: Pass in an array of functions of any size, in the order they should execute.
+    //             Functions that require waiting for user input should return true, other functions should return false  
+    // Calling the function with no argument or an empty list will not cause crashes, but will have no effect.
+    // Currently not complete: Waits 3 seconds rather than for user input during choices.
+    sequentialAbilityTriggers: (function(){
+
+        function ability(effect, after, wait){
+            if (wait)
+                events.one("madeChoice", function(){var shouldWait = effect(); after && after(shouldWait);});
+            else{
+                var shouldWait = effect();
+                after && after(shouldWait);
+            }
+        }
+        
+        return function(abilities){
+            if (!abilities || abilities.length == 0) return;            
+            var after = [];
+            after[abilities.length-1] = null;
+            for (var i = abilities.length-2; i >= 0; i--){
+                after[i] = (function(i){return function(w){ability(abilities[i+1], after[i+1], w);};})(i);
+            }
+            ability(abilities[0],after[0], false);
+        }
+    })(),
 }
 Display.init();
 GAME.init();
