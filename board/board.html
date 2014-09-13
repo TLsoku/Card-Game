@@ -26,9 +26,13 @@
 <div id='shader' style='display:none'></div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="../jsoncards.js"></script>
+<script src="/jsoncards.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src="../underscore-min.js"></script>
+<script>
+//Fallback for jquery
+window.jQuery || document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+</script>
+<script src="/lib/underscore-min.js"></script>
 <script src="cardPrototype.js"></script>
 <script src="player.js"></script>
 <script src="board.js"></script>
