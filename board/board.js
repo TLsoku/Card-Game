@@ -2,7 +2,11 @@
 var socket = io.connect();
 socket.on('turn', function(data) {alert("your turn"); GAME.players[0].turn.start();});
 socket.on('stats', function(data) {Display.updateStats(data);});
-socket.on('addToField', function(card) {var card = GAME.createCard(card);  card.controller = GAME.players[1];  Display.addToField(card, false);});
+socket.on('addToField', function(card) {var card = CardUtils.createCard(card);  card.controller = GAME.players[1];  Display.addToField(card, false);});
+
+socket.on('phase', function(phase){
+    if (phase == 'upkeep') events.trigger("oppUpkeep");
+});
 
 function endTurn(){
     GAME.players[0].turn.end();
@@ -37,6 +41,9 @@ events.on('life', function(e, player) {statsChanged(player.getStats());});
 events.on('essence', function(e, player) {statsChanged(player.getStats());});
 events.on('deck', function(e, player) {statsChanged(player.getStats());});
 
+//Event that triggers on your upkeep, used to send signals to other player
+events.on('upkeep', function(e, player) {socket.emit("phase", "upkeep");})
+
 //Logging event, currently logs to console and chat
 events.on('log', function(e, message) {$("div.chat").append($("<p>"+message+"</p>")); console.log(message);});
 
@@ -65,13 +72,13 @@ details: $("#gameScreen .detailed"),
                         var playedSuccess = false;
 
                         //Play as an essence
-                        if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card);
-                        else if (e.altKey) playedSuccess = card.owner.playAsPower(card);
+                        if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card.id);
+                        else if (e.altKey) playedSuccess = card.owner.playAsPower(card.id);
                         //Should be replaced with buttons at some point
 
 
-                        else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card);
-                        else playedSuccess = card.owner.playSpell(card);
+                        else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card.id);
+                        else playedSuccess = card.owner.playSpell(card.id);
                         if (playedSuccess) t.removeFromHand(this);
                         })
                 .find("img").attr("src", card.image);
@@ -118,7 +125,7 @@ details: $("#gameScreen .detailed"),
     showTargetting: function(){
         $(".field .thumbnail").toggleClass("glow", true).on("click.target", function(){
             console.log($(this));
-            events.trigger("target", $(this).data());
+            events.trigger("target", $(this).data().id);
             $(".field .thumbnail").toggleClass("glow", false);
         });
     },
@@ -149,7 +156,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         var deck = [];
         for (name in storedDeck)
             for (var i = 0; i < storedDeck[name]; i++)
-                deck.push(this.createCard(name));
+                deck.push(CardUtils.createCard(name));
 
         this.players.push(new Player(deck));
         this.players[0].points = 0;
@@ -161,10 +168,14 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
     chooseTarget: function(callback, context) { //Prompts the player to choose a target, then calls the callback function on the chosen target
         events.trigger("log", "choose a target");
         Display.showTargetting();
-        events.one("target", function(event, target) {callback.call(context,target); events.trigger("log", "Targetted " + target); }); //Simulates waiting for user input by pausing for 2 seconds
+        events.one("target", function(event, id) {
+            var target = GAME.getCardByID(id);
+            callback.call(context,target);
+            events.trigger("log", "Targetted " + target);
+        });
     },
     promptChoice: (function() {
-        //Makes a choice prompt box, has 4 arguments.
+        //Makes a choice prompt box, has 3 arguments.
         //First is the text for the prompt
         //Second is an array of functions where the key is what is displayed on the button
         //Third is the context (this) for the called function
@@ -194,13 +205,20 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             $("body").append($choiceBox);
         }
     })(),
+    
+    // Makes a prompt to pay resources for an ability (points and power), has 5 arguments
+    // First is the text for the prompt
+    // Second is the cost of the ability
+    // Third is the player who is paying for the ability
+    // Fourth is a function that will be called if the payment is completed
+    // Fifth is the context (value of this) within the called function.
     promptResourcePayment: (function() {
 
         var $paymentBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $paymentText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $paymentRow = $("<div style='border:none; position:absolute; top:50%; width: 100%; text-align:center;'></div>");
-        var $payPoints = $("<input type='number' min='0'>");
-        var $payPower = $("<input type='number' min='0'>");
+        var $payPoints = $("<input type='number' size='5' value='0' min='0'>");
+        var $payPower = $("<input type='number' size='5' value='0' min='0'>");
         
         var $buttonsRow = $("<div style='border:none; position:absolute; top:65%; width: 100%; text-align:center;'></div>");
         var $confirmButton = $("<button> Confirm </button>");
@@ -220,13 +238,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             $confirmButton.click(function() {
                     var pointsPaid = parseInt($payPoints.val(), 10);
                     var powerPaid = parseInt($payPower.val(),10);
-console.log(powerPaid);
-console.log(pointsPaid);
-console.log(player.points);
-console.log(player.power);
-console.log(cost);
                     if (pointsPaid <= player.points && pointsPaid  >= 0 && powerPaid >= 0 && powerPaid <= player.points && pointsPaid + powerPaid == cost) {
-console.log("happening")
                         player.points -= pointsPaid;
                         player.power -= powerPaid;
                         effect.call(context); 
@@ -245,11 +257,6 @@ console.log("happening")
             $("body").append($paymentBox);
         }
     })(),
-    createCard: function(name){
-        var template = _.find(allCards, function(c) {return c.name === name;});
-        if (template.type == "Creature") return (new Creature(template));
-        else return (new Spell(template));
-    },
 
     // Utility for calling a series of functions in a specified order, ensuring that they occur in that order
     // even if some require waiting for user input.
@@ -278,6 +285,16 @@ console.log("happening")
             ability(abilities[0],after[0], false);
         }
     })(),
+    
+    // Pass in an ID number for a card (each card gets a unique one), get back the card itself.  Simple.
+    // May cause issues later since each player has different ID numbers for the same card.
+    getCardByID: function(id){
+        console.log(id);
+        var foundCard = _.find(this.cards, function(c){return c.id == id;});
+        if (foundCard) return foundCard;
+        events.trigger("log", "Card with id " + id + " was not found.");
+        return false;
+    },
 }
 Display.init();
 GAME.init();

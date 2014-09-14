@@ -36,4 +36,16 @@ tileCards: function(div, cardList) {
                        div.append(t.makeThumbnail(c));
                        });
            },
+    createCard: function(name){
+        var template = _.find(allCards, function(c) {return c.name === name;});
+        if (!template){
+            var template = _.find(allTokens, function(c) {return c.name === name;});
+            if (template) return (new Creature(template));
+            else console.log("Error, non-existant card name");
+        }
+        if (template.type == "Creature") return (new Creature(template));
+        else if (template.type == "Spell") return (new Spell(template));
+        else if (template.type == "Field") return (new Field(template));
+        else (console.log("Error, non-existant card type"));
+    },
 }

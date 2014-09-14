@@ -48,12 +48,14 @@ Player.prototype.upkeep = function(){
     var turnStartAbilities = [];
     this.creatures.forEach(function(creature) {turnStartAbilities.push(creature.turnStart());});
     GAME.sequentialAbilityTriggers(turnStartAbilities);
+    events.trigger("upkeep", this); //Trigger an event for upkeep to signal other player
     this.draw(1);
     events.trigger("resource", this);
 }
 
 Player.prototype.draw = function(number) {
     for (var i = 0; i < number; i++){
+        if (this.deck.length == 0) {console.log("out of deck"); return;} //Can't draw more than in your deck
         var nextCard = this.deck.shift();
         this.addToHand(nextCard);
     }
@@ -104,19 +106,25 @@ Player.prototype.addToCreatures = function(card) {
     card.state = "field";
     card.controller = this;
     this.creatures.push(card);
+    events.trigger("newCard", card);
+    card.addTriggers();
 }
 
 Player.prototype.removeFromCreatures = function(card) {
+    a = card;
+    b = this.creatures[0];
+
     this.creatures = _.without(this.creatures, card);
     Display.removeFromField(card);
+    card.removeTriggers();
 }
 
-Player.prototype.playCreature = function(card) {
+Player.prototype.playCreature = function(id) {
+    var card = GAME.getCardByID(id);
     if (this.points >= card.cost) {//Have enough to play the card
         this.points -= card.cost;
         this.removeFromHand(card);
         this.addToCreatures(card);
-        events.trigger("newCard", card);
         card.play();
         events.trigger("resource", this);
         return true;
@@ -126,7 +134,8 @@ Player.prototype.playCreature = function(card) {
         events.trigger("log", "not enough points to play " + card.name);
 }
 
-Player.prototype.playSpell = function(card) {
+Player.prototype.playSpell = function(id) {
+    var card = GAME.getCardByID(id);
     if (this.power >= card.cost) {//Have enough to play the card
         this.power -= card.cost;
         this.removeFromHand(card);

@@ -6,12 +6,28 @@ function Card(original) { //Object to represent a card.  Pass in the original ca
     this.text = original.text;
     this.image = original.image;
 
+    //Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
+    this.func = original.special || [];
+    Card.cardInitCount++;
+    this.id = Card.cardInitCount; //Track ID so cards can be indentified even if name is the same
     this.owner; //Stores the owner of the card, valid regardless of where the card is
+    GAME.cards.push(this);
 }
 
 Card.prototype.toString = function(){
     return "A card called " + this.name;
 }
+
+Card.prototype.addTriggers = function(){
+    var t = this;
+    if (this.func['oppStart'])    events.on('oppUpkeep.' + this.name + this.id , function(){t.func['oppStart'].call(t);});    
+}
+
+Card.prototype.removeTriggers = function(){
+    events.off('oppUpkeep.' + this.name + this.id);    
+}
+
+Card.cardInitCount = 0;
 
 //
 //  Spell prototype
@@ -57,8 +73,6 @@ function Creature(original, state) { //Object to represent a single Creature in 
     this.state = state || "";
     this.controller; //Variable to store the controller of the creature, only valid while it is in play
 
-    //Stores special functions related to the Creature, such as what happens on ETB, death, EoT, etc
-    this.func = original.special || [];
 }
 
 Creature.prototype = Object.create(Card.prototype); //Inheriting line
@@ -77,8 +91,10 @@ Creature.prototype.takeDamage = function(amount) {
 }
 
 Creature.prototype.die = function() {
-    if (this.func["die"] != undefined)  //Has a special death function which should specify eventual state and other things
+    if (this.func["die"] != undefined){  //Has a special death function which should specify eventual state and other things
+        events.trigger("log", this.name + " had a special death");
         this.state = this.func["die"].call(this);
+    }
     else {
         this.state = "graveyard";
         this.controller.removeFromCreatures(this);

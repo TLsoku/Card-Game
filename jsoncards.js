@@ -500,6 +500,15 @@ allCards = [{
     attack: 5,
     defense: 20,
     text: 'When Shizuha dies, put her back into play as an essence.\n            When you play a essence, if you have already played at least 1 essence this turn, gain 1 resource of your choice.\n',
+    special: {
+        "die": function(){
+            GAME.promptChoice("Turn Shizuha into what type of land?", {
+                "Point": function() {this.controller.addPointToField(this);},
+                "Power": function() {this.controller.addPowerToField(this);}
+            }, this);
+            return true;
+        }
+    },
 },{
     name: 'Shou',
     image: 'http://i.imgur.com/m1bXprH.jpg',
@@ -684,4 +693,88 @@ allCards = [{
     attack: 13,
     defense: 50,
     text: 'At the beginning of each turn or whenever a non-token creature dies, create a 0/1 Ghost token that cannot intercept and has "Sacrifice 7 ghosts: Create a Saigyou Ayakashi token".\nSacrifice a Ghost token: Yuyuko heals 8 health.',
+    special: {
+        "start": function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));},
+        "oppStart":  function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));}    
+    }
 }];
+
+
+
+allTokens = [{
+    name: 'Bug',
+    image: 'http://i.imgur.com/rM50VTW.png',
+    type: 'Token',
+    attack: 5,
+    defense: 1,
+    text: '',
+},{
+    name: 'EX-Keine',
+    image: 'http://i.imgur.com/LoMoaxx.jpg',
+    type: 'Token',
+    attack: 15,
+    defense: 40,
+    text: 'You may cast cards removed by Keine as if they were in your hand.  If this token leaves play, it turns back into Keine (for being returned to hand/deck)',
+},{
+    name: 'Flan',
+    image: 'http://i.imgur.com/NPR3voI.jpg',
+    type: 'Token',
+    attack: 10,
+    defense: 5,
+    text: 'Sacrifice this at the end of your turn',
+},{
+    name: 'Ghost',
+    image: 'http://i.imgur.com/jU38yzW.jpg',
+    type: 'Token',
+    attack: 0,
+    defense: 1,
+    text: 'Ghost cannot intercept.\n			Sacrifice 7 Ghosts: Create a 0/80 Saigyou Ayakashi token that cannot be targeted by spells or abilities, cannot be destroyed outside of combat, cannot be protected by intercepts and has "When this creature enters the battlefield, return all creatures in your graveyard to play. If a non-token creature you control would die, exile it instead. Return it to its owner\'s hand at the end of the turn."',
+},{
+    name: 'Master Spark',
+    image: 'http://i.imgur.com/sbZc4Np.jpg',
+    type: 'Token-Spell',
+    cost: 5,
+    text: ' Deal 35 damage to target creature.',
+},{
+    name: 'Monster',
+    image: 'http://i.imgur.com/8GCvJOU.jpg',
+    type: 'Token',
+    attack: 10,
+    defense: 20,
+    text: '',
+},{
+    name: 'Orb',
+    image: 'http://i.imgur.com/eLBhnF2.jpg',
+    type: 'Token',
+    attack: 20,
+    defense: 20,
+    text: 'Paired to a Reimu.  If the Reimu leaves play, sacrifice the orb.  Cannot be damaged, targetted, or effected in any ways by spells or abilities except those of the paired reimu.',
+},{
+    name: 'Saigyou Ayakashi',
+    image: 'http://i.imgur.com/nJLKVOs.jpg',
+    type: 'Token',
+    attack: 0,
+    defense: 80,
+    text: 'Saigyou Ayakashi cannot be targeted by spells or abilities, cannot intercept, cannot be destroyed outside of combat and cannot be protected by intercepts.\nWhen Saigyou Ayakashi enters the battlefield, return all creatures in your graveyard to play.\nIf a non-token creature you control would die, exile it instead. Return it to its owner\'s hand at the end of the turn.',
+},{
+    name: 'Shield Doll',
+    image: 'http://i.imgur.com/32sBu26.jpg',
+    type: 'Token',
+    attack: 0,
+    defense: 15,
+    text: '',
+},{
+    name: 'Sword Doll',
+    image: 'http://i.imgur.com/h2awqTD.jpg',
+    type: 'Token',
+    attack: 10,
+    defense: 5,
+    text: 'Cannot intercept',
+},{
+    name: 'Zombie Fairy',
+    image: 'http://i.imgur.com/ocV53If.jpg',
+    type: 'Token',
+    attack: 0,
+    defense: 5,
+    text: 'Zombie Fairy cannot intercept.',
+},];

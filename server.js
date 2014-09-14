@@ -20,6 +20,9 @@ function gamePrep(socket) {
 	socket.on('addToField', function(card){
 		socket.broadcast.emit('addToField', card);
 	});
+	socket.on('phase', function(phase){
+		socket.broadcast.emit('phase', phase);
+	});
 	
 	
 	
