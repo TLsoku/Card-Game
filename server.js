@@ -17,11 +17,14 @@ function gamePrep(socket) {
 		data.player = 'opponent';
 		socket.broadcast.emit('stats', data);
 	});
-	socket.on('addToField', function(card){
-		socket.broadcast.emit('addToField', card);
+	socket.on('addToField', function(card, id){
+		socket.broadcast.emit('addToField', card,(0-id));
 	});
 	socket.on('phase', function(phase){
-		socket.broadcast.emit('phase', phase);
+		socket.broadcast.emit('phase', 'opp' + phase);
+	});
+	socket.on('attack', function(attacker, target){
+		socket.broadcast.emit('phase', 'opp' + phase);
 	});
 	
 	

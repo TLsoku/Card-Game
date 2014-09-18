@@ -209,7 +209,7 @@ allCards = [{
     defense: 50,
     text: 'At the beginning of your turn, put the top card of your deck into play as an essence.\nSacrifice an essence: Kanako deals 8 damage to target creature.\n',
     special:{
-        "start": function(){
+        "upkeep": function(){
             GAME.promptChoice("Turn the top card of your deck into an essence:", {
                 "Point": function() {this.controller.addPointToField(this.controller.deck.shift());},
                 "Power": function() {this.controller.addPowerToField(this.controller.deck.shift());}
@@ -234,7 +234,7 @@ allCards = [{
     defense: 20,
     text: 'When you draw a card for the first time on your turn, you may pay (2). If you do, draw a card.\n',
     special:{
-        "start": function(){
+        "upkeep": function(){
             GAME.promptResourcePayment("You may pay (2) to draw another card.", 2, this.controller,
                 function() {this.controller.draw(1);},
             this);
@@ -482,7 +482,7 @@ allCards = [{
     defense: 30,
     text: 'At the beginning of your turn, gain life equal to the number of essences you control.\n(0): Turn target non-token creature you control into an essence of your choice.',
     special: {
-        "start": function(){this.controller.gainLife(this.controller.pointEssences.length + this.controller.powerEssences.length);}
+        "upkeep": function(){this.controller.gainLife(this.controller.pointEssences.length + this.controller.powerEssences.length);}
     }
 },{
     name: 'Shiki',
@@ -694,8 +694,8 @@ allCards = [{
     defense: 50,
     text: 'At the beginning of each turn or whenever a non-token creature dies, create a 0/1 Ghost token that cannot intercept and has "Sacrifice 7 ghosts: Create a Saigyou Ayakashi token".\nSacrifice a Ghost token: Yuyuko heals 8 health.',
     special: {
-        "start": function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));},
-        "oppStart":  function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));}    
+        "upkeep": function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));},
+        "oppupkeep":  function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));}    
     }
 }];
 

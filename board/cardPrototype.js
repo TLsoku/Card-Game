@@ -1,6 +1,6 @@
 // The base card that other cards are made from
 
-function Card(original) { //Object to represent a card.  Pass in the original card object from the cards data file
+function Card(original, id) { //Object to represent a card.  Pass in the original card object from the cards data file
     this.name = original.name;
     this.cost = original.cost;
     this.text = original.text;
@@ -9,7 +9,7 @@ function Card(original) { //Object to represent a card.  Pass in the original ca
     //Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
     this.func = original.special || [];
     Card.cardInitCount++;
-    this.id = Card.cardInitCount; //Track ID so cards can be indentified even if name is the same
+    this.id = id || Card.cardInitCount; //Track ID so cards can be indentified even if name is the same.  Cards from other player get the same ID, but negative, so they can be found easily.
     this.owner; //Stores the owner of the card, valid regardless of where the card is
     GAME.cards.push(this);
 }
@@ -18,14 +18,16 @@ Card.prototype.toString = function(){
     return "A card called " + this.name;
 }
 
-Card.prototype.addTriggers = function(){
+/*Card.prototype.addTriggers = function(){
     var t = this;
-    if (this.func['oppStart'])    events.on('oppUpkeep.' + this.name + this.id , function(){t.func['oppStart'].call(t);});    
+    for (ev in t.func)
+        events.on(ev + '.' +  t.id , function(){t.func[ev].call(t);});    
 }
 
 Card.prototype.removeTriggers = function(){
-    events.off('oppUpkeep.' + this.name + this.id);    
-}
+    for (ev in t.func)
+        events.off(ev + '.' + this.id);
+}*/
 
 Card.cardInitCount = 0;
 
@@ -116,13 +118,11 @@ Creature.prototype.turnEnd = function() {
 }
 
 //Returns a function that controls what happens to the creature at the start of the turn.
-Creature.prototype.turnStart = function(){
+Creature.prototype.handleEvent = function(eventType){
     var c = this;    
-    return function(){
-        if (c.func["start"])
-            return c.func["start"].call(c);
-        return false;
-    }
+    if (c.func[eventType])
+        return function(){return c.func[eventType].call(c);};
+    return false;
 }
 
 Creature.prototype.toString = function() {

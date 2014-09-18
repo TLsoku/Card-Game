@@ -45,10 +45,7 @@ function Player(deck) {
 Player.prototype.upkeep = function(){
     this.points += this.pointEssences.length;
     this.power += this.powerEssences.length;
-    var turnStartAbilities = [];
-    this.creatures.forEach(function(creature) {turnStartAbilities.push(creature.turnStart());});
-    GAME.sequentialAbilityTriggers(turnStartAbilities);
-    events.trigger("upkeep", this); //Trigger an event for upkeep to signal other player
+    events.trigger("event", "upkeep"); //Trigger an event for upkeep to signal other player
     this.draw(1);
     events.trigger("resource", this);
 }
@@ -107,7 +104,7 @@ Player.prototype.addToCreatures = function(card) {
     card.controller = this;
     this.creatures.push(card);
     events.trigger("newCard", card);
-    card.addTriggers();
+    //card.addTriggers();
 }
 
 Player.prototype.removeFromCreatures = function(card) {
@@ -116,7 +113,7 @@ Player.prototype.removeFromCreatures = function(card) {
 
     this.creatures = _.without(this.creatures, card);
     Display.removeFromField(card);
-    card.removeTriggers();
+    //card.removeTriggers();
 }
 
 Player.prototype.playCreature = function(id) {
@@ -168,4 +165,11 @@ Player.prototype.getStats = function() {
     stats["deck size"] = this.deck.length;
     stats["player"] = 'you';
     return stats;
+}
+
+//Triggers all the effects for a certain phase/event.  Has to be done by the player rather than the creatures to ensure correct order.
+Player.prototype.creatureEvents = function(eventType) {
+    var abilityList = [];
+    this.creatures.forEach(function(creature) {abilityList.push(creature.handleEvent(eventType));});
+    GAME.sequentialAbilityTriggers(abilityList);
 }

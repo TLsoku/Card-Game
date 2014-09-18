@@ -2,10 +2,10 @@
 var socket = io.connect();
 socket.on('turn', function(data) {alert("your turn"); GAME.players[0].turn.start();});
 socket.on('stats', function(data) {Display.updateStats(data);});
-socket.on('addToField', function(card) {var card = CardUtils.createCard(card);  card.controller = GAME.players[1];  Display.addToField(card, false);});
+socket.on('addToField', function(card, id) {var card = CardUtils.createCard(card, id);  card.controller = GAME.players[1];  Display.addToField(card, false);});
 
-socket.on('phase', function(phase){
-    if (phase == 'upkeep') events.trigger("oppUpkeep");
+socket.on('event', function(type){
+    GAME.players[0].creatureEvents(type);
 });
 
 function endTurn(){
@@ -32,7 +32,7 @@ function packCard(card){  //Removes circular references from card so it can be p
 //Sends a signal to other player to update the field when new cards appear on it
 events.on('newCard', function(e, card) {
     Display.addToField(card, true);
-    socket.emit('addToField', card.name);
+    socket.emit('addToField', card.name, card.id);
 });
 
 //A bunch of events to update stats, separated by type in case they should be different later
@@ -42,7 +42,10 @@ events.on('essence', function(e, player) {statsChanged(player.getStats());});
 events.on('deck', function(e, player) {statsChanged(player.getStats());});
 
 //Event that triggers on your upkeep, used to send signals to other player
-events.on('upkeep', function(e, player) {socket.emit("phase", "upkeep");})
+events.on('event', function(e, type) {
+    GAME.players[0].creatureEvents(type);
+    socket.emit("event", type);
+})
 
 //Logging event, currently logs to console and chat
 events.on('log', function(e, message) {$("div.chat").append($("<p>"+message+"</p>")); console.log(message);});
@@ -238,7 +241,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             $confirmButton.click(function() {
                     var pointsPaid = parseInt($payPoints.val(), 10);
                     var powerPaid = parseInt($payPower.val(),10);
-                    if (pointsPaid <= player.points && pointsPaid  >= 0 && powerPaid >= 0 && powerPaid <= player.points && pointsPaid + powerPaid == cost) {
+                    if (pointsPaid <= player.points && pointsPaid  >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
                         player.points -= pointsPaid;
                         player.power -= powerPaid;
                         effect.call(context); 
@@ -276,6 +279,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         }
         
         return function(abilities){
+            abilities = _.compact(abilities);
             if (!abilities || abilities.length == 0) return;            
             var after = [];
             after[abilities.length-1] = null;
