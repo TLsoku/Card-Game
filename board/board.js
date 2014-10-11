@@ -147,7 +147,7 @@ var GAME = {
     init: function() {
         if (!(localStorage['My deck'])) {
            alert("Save a deck with the name 'My deck' in order to play. (The default deck name)");
-           location.href = '/deck.html';
+           location.href = '../deckbuilder/deck.html';
         }
 
 events.trigger("log", "Use ctrl+click to play as a point essence.");
