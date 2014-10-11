@@ -11,7 +11,7 @@ thumb: $("<span class='thumbnail' > <img style='height:100%; width:100%' src='/i
            theCard.mouseover(function(e) {t.magnifyCard(cardData, e.pageX+5, e.pageY+5);})
                .mouseout(function() {t.magnifyCard();})
                .click(function() { DeckBuilder.addToDeck(cardData); DeckBuilder.addToList(cardData);});
-           return theCard;	
+           return theCard;
        },
 magnifyCard: function(card, x, y){
                  var details = $("div.detailed");

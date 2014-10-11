@@ -10,25 +10,33 @@ function validDeck(deck) {
 
 function gamePrep(socket) {
 
-	socket.on('turn', function(data){
-		socket.broadcast.emit('turn', data);
-	});
-	socket.on('stats', function(data){
-		data.player = 'opponent';
-		socket.broadcast.emit('stats', data);
-	});
-	socket.on('addToField', function(card, id){
-		socket.broadcast.emit('addToField', card,(0-id));
-	});
-	socket.on('phase', function(phase){
-		socket.broadcast.emit('phase', 'opp' + phase);
-	});
-	socket.on('attack', function(attacker, target){
-		socket.broadcast.emit('phase', 'opp' + phase);
-	});
-	
-	
-	
+    socket.on('turn', function(data){
+        socket.broadcast.emit('turn', data);
+    });
+    socket.on('stats', function(data){
+        data.player = 'opponent';
+        socket.broadcast.emit('stats', data);
+    });
+    socket.on('addToField', function(card, id){
+        socket.broadcast.emit('addToField', card,(0-id));
+    });
+    socket.on('died', function(id){
+        socket.broadcast.emit('died', (0-id));
+    });
+    socket.on('event', function(phase){
+        socket.broadcast.emit('event', 'opp' + phase);
+    });
+    socket.on('attack', function(attacker, target){
+        attacker *= -1;
+        target *= -1;
+        socket.broadcast.emit('attack', attacker, target);
+    });
+    socket.on('intercept', function(interceptor){
+        interceptor = (interceptor ? interceptor * -1 : interceptor);
+        socket.broadcast.emit('intercept', interceptor);
+    });
+
+
 }
 
 
@@ -63,13 +71,13 @@ app.listen(listenPort);
 io.set('log level', 1);
 
 function handler (req, res) {
-  
+
   res.setHeader("Accept-Ranges", "bytes");
   pathname = url.parse(req.url).pathname;
   console.log(pathname);
-  
+
   if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
-  
+
   if (pathname == "/decksave") {
       if (req.method == 'POST') {
           console.log("posted a deck");
@@ -91,15 +99,22 @@ function handler (req, res) {
   //if (pathname == "/testbgm.ogg"){
 	//res.writeHead(200);
 	//console.log(req);
-	
+
   //}else
 	//res.writeHead(200);
-	
-  data = fs.readFileSync(__dirname + '' + pathname);//'/index.html')
-  
+    try {
+        data = fs.readFileSync(__dirname + '' + pathname);
+    }
+    catch (e) {
+        console.log(e.path);
+        res.writeHead(404);
+        data = fs.readFileSync(__dirname + '/notfound.html');
+        res.end(data);
+        return;
+    }
   //res.writeHead(200);
-  res.end(data);
-  
+    res.end(data);
+
 }
 
 io.sockets.on('connection', function (socket) {
@@ -108,8 +123,8 @@ io.sockets.on('connection', function (socket) {
 	socket.plain = false; //User is capable of using fancy CSS
 	socket.IPaddr = socket.handshake.address.address;
 	socket.auth = "User";
-	
-	
+
+
 	if (_.contains(blacklist, socket.IPaddr)){
 		console.log("Blocked an attempted connection from " + socket.IPaddr);
 		io.sockets.in('mod').emit('system', {message: "Blocked an attemped connection from " + socket.IPaddr});
@@ -119,44 +134,44 @@ io.sockets.on('connection', function (socket) {
 	}
 	console.log("New connection from " + socket.IPaddr);
 	socket.emit('system', {message: welcomeMessage});
-	
+
   socket.on('chat', function (data) {
     var oldName = socket.name;
 	socket.name = data.name;
-	if (oldName != socket.name) 
+	if (oldName != socket.name)
 		console.log(socket.IPaddr + " changed name from " + oldName + " to " + socket.name);
-	
+
 	if (cons.context.showChat)
 		console.log(data.name + " : " + data.message);
-	
+
 	filterAndEnhance(data, socket);
-	
+
 	if (data.message[0] == '/')
 		processSpecial(data, socket);
 	else
 		io.sockets.emit('chatReceived', data);
-	
+
 	var d = new Date;
 	d.setUTCHours(d.getUTCHours() - 4) //Convert date to local time for me, at least
-	
+
 	fs.appendFile("log.txt", d.toISOString().slice(0,19) + " --  " + data.name + ":  " + data.message + "\n");
   });
-	
+
   socket.on('disconnect', function() {
 		var identifier = socket.name || socket.IPaddr;
 		console.log(identifier + " has left chat.  Bye!");
 		socket.broadcast.emit('system', {message: identifier + " has left chat.  Bye!"});
   });
-  
+
   });
-  
+
 //Regex filtering for banned words, links, etc
 function filterAndEnhance(data, socket) {
 	if (!data.message) return;
-	
+
 	//Replaces sakuya is love
 	data.message = data.message.replace(/Sakuya is love/i, "Sakuya is shit");
-	
+
 	//Makes links clickable
 	data.message = data.message.replace(/(https?:\/\/[^ ]+) ?(.*)$/, "<a href='$1' target='_blank'>$1 </a>$2");
 
@@ -164,11 +179,11 @@ function filterAndEnhance(data, socket) {
 	if (socket.plain)
 		data.colour = data.colour.slice(0, data.colour.indexOf(';'));
 }
-	
+
 //User commands
 function processSpecial(data, socket) {
 	//Special commands prefixed by /
-	
+
 	//Helper function to find the username and split it from the rest of the text
 	//Maybe clean this up later since it's really bad
 	function findName(data) {
@@ -178,7 +193,7 @@ function processSpecial(data, socket) {
 		data.message = data.message.slice(i2+1);
 		return targetName;
 	}
-	
+
 	//PMs.  Syntax: /pm %name% message
 	if (data.message.match(/^\/pm/)) {
 		targetName = findName(data);
@@ -188,7 +203,7 @@ function processSpecial(data, socket) {
 				socket.emit('pmReceived', data);
 			}
 	}
-	
+
 	if (socket.auth == "Mod") {
 	console.log("Mod");
 	//Extra commands for mods
@@ -212,10 +227,10 @@ function processSpecial(data, socket) {
 			socket.emit('system', {message: _.pluck(listUsers(), 'name')});
 		}
 	}
-	
+
 }
-  
-//Server commands   
+
+//Server commands
 var cons = repl.start({});
 
 cons.context.say = say;

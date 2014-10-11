@@ -1,6 +1,6 @@
 //Object to represent a player in the game.
 
-function Player(deck) { 
+function Player(deck) {
     /*  *
      *
      *
@@ -23,7 +23,7 @@ function Player(deck) {
     this.points = 0;
     this.power = 0;
     this.life = 100;
-    
+
     this.turn = {
         player: this,
         active: false,
@@ -32,11 +32,11 @@ function Player(deck) {
             this.player.upkeep();
             this.player.playedPoints = false;
             this.player.playedPower = false;
-            $(".menubuttons button").css("display", "block");
+            $(".menubuttons button").css("display", "block"); //A bit of display code in here, should probably get moved
         },
         end: function() {
             this.active = false;
-            $(".menubuttons button").css("display", "none");            
+            $(".menubuttons button").css("display", "none");
         }
     }
 
@@ -45,7 +45,8 @@ function Player(deck) {
 Player.prototype.upkeep = function(){
     this.points += this.pointEssences.length;
     this.power += this.powerEssences.length;
-    events.trigger("event", "upkeep"); //Trigger an event for upkeep to signal other player
+    if (this.creatures) this.creatures.forEach(function(c) {console.log(c);c.attackCount = 0;});
+    events.trigger("event", "upkeep"); //Trigger an event for upkeep to signal other player and signal your own creatures
     this.draw(1);
     events.trigger("resource", this);
 }
@@ -59,7 +60,7 @@ Player.prototype.draw = function(number) {
     events.trigger("deck", this);
 }
 
-Player.prototype.addToHand = function(card){ //Adds a card to a player's hand.  Pass in the card (creature or spell) as a variable
+Player.prototype.addToHand = function(card){ //Adds a card to a player's hand.  Pass in the card object as a variable (not just card name)
     card.state = "hand";
     this.hand.push(card);
     Display.addToHand(card);
@@ -69,6 +70,9 @@ Player.prototype.removeFromHand = function(card) {  //Removes the specified card
     this.hand = _.without(this.hand, card);
 }
 
+//
+// Playing as power essence and point essence could maybe be condensed into 2 functions rather than 4
+
 Player.prototype.playAsPoint = function(card) { //Plays a card as a points resource
     if (this.playedPoints) return false; //Can only play one point resource per turn
     this.removeFromHand(card);
@@ -77,7 +81,8 @@ Player.prototype.playAsPoint = function(card) { //Plays a card as a points resou
     return true;
 }
 
-//Puts a card onto the field as a point resource.  NOTE: Not the same as playing a point resource from hand.
+// Puts a card onto the field as a point resource.  NOTE: Not the same as playing a point resource from hand.
+// Playing a point resource from hand will use this, but also cards like Kanako.
 Player.prototype.addPointToField = function(card){
     card.state = "land";
     this.pointEssences.push(card);
@@ -108,9 +113,6 @@ Player.prototype.addToCreatures = function(card) {
 }
 
 Player.prototype.removeFromCreatures = function(card) {
-    a = card;
-    b = this.creatures[0];
-
     this.creatures = _.without(this.creatures, card);
     Display.removeFromField(card);
     //card.removeTriggers();
@@ -131,6 +133,21 @@ Player.prototype.playCreature = function(id) {
         events.trigger("log", "not enough points to play " + card.name);
 }
 
+Player.prototype.attack = function(attacker, target){
+    attacker.attackCount += 1;
+    events.trigger("event", "attack");
+    events.trigger("attack", [attacker.id, target.id]);
+    events.trigger("log", "Attacking " + target.name + " with " + attacker.name);
+    events.one("intercept", function(event, interceptor){
+        if (!interceptor){ //They chose not to intercept
+            attacker.fight(target);
+        }
+        else {
+            attacker.fight(interceptor);
+        }
+    });
+}
+
 Player.prototype.playSpell = function(id) {
     var card = GAME.getCardByID(id);
     if (this.power >= card.cost) {//Have enough to play the card
@@ -148,12 +165,13 @@ Player.prototype.playSpell = function(id) {
 Player.prototype.gainLife = function(amount){
     this.life += amount;
     events.trigger("life", this);
-} 
+}
 
 Player.prototype.toString = function() {
     return "HAND: \n" + this.hand.join("\n") + "\nFIELD: \n" + this.creatures.join("\n") + "\nPoints: " + this.points + "\tPower: " + this.power;
 }
 
+//Packs up a bunch of stats about the player so that they can update the display or be sent to the other player.
 Player.prototype.getStats = function() {
     var stats = {};
     stats["hand size"] = this.hand.length;
@@ -167,7 +185,7 @@ Player.prototype.getStats = function() {
     return stats;
 }
 
-//Triggers all the effects for a certain phase/event.  Has to be done by the player rather than the creatures to ensure correct order.
+//Triggers all the effects for a certain phase/event.  Has to be managed by the player rather than each individual creature to ensure correct order.
 Player.prototype.creatureEvents = function(eventType) {
     var abilityList = [];
     this.creatures.forEach(function(creature) {abilityList.push(creature.handleEvent(eventType));});

@@ -9,7 +9,10 @@ function Card(original, id) { //Object to represent a card.  Pass in the origina
     //Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
     this.func = original.special || [];
     Card.cardInitCount++;
-    this.id = id || Card.cardInitCount; //Track ID so cards can be indentified even if name is the same.  Cards from other player get the same ID, but negative, so they can be found easily.
+
+    // Each card generated on your side gets a unique positive ID number.  Each card generated on the opponent's side gets a unique negative
+    //  number.   This makes it easy to specify a card when messaging from player to player.
+    this.id = id || Card.cardInitCount;
     this.owner; //Stores the owner of the card, valid regardless of where the card is
     GAME.cards.push(this);
 }
@@ -18,10 +21,11 @@ Card.prototype.toString = function(){
     return "A card called " + this.name;
 }
 
+//Was considering adding triggers like this, but decided on another way to do it.  Still in here just in case I need to go back to this old way
 /*Card.prototype.addTriggers = function(){
     var t = this;
     for (ev in t.func)
-        events.on(ev + '.' +  t.id , function(){t.func[ev].call(t);});    
+        events.on(ev + '.' +  t.id , function(){t.func[ev].call(t);});
 }
 
 Card.prototype.removeTriggers = function(){
@@ -34,11 +38,11 @@ Card.cardInitCount = 0;
 //
 //  Spell prototype
 
-function Spell(original){  //Tentatively representing a spell
+function Spell(original){
     Card.call(this, original);
     //this.effect = original.effect;
 
-    //TESTING: ALL SPELLS ARE a test spell
+    //TESTING: ALL SPELLS ARE A TEST SPELL
     this.text = "Deal 20 damage to target creature.";
     this.effect = function() {GAME.chooseTarget(function(target) {this.dealDamage(target, 20);}, this);};
 }
@@ -51,30 +55,27 @@ Spell.prototype.play = function() {
 }
 
 Spell.prototype.dealDamage = function(target, amount) {
-    console.log(target);
     target.takeDamage(amount);
-    console.log("dealt");
 }
 
 //
 //  Creature prototype
 
-function Creature(original, state) { //Object to represent a single Creature in the game.  Inherits from Card.
+function Creature(original, id) { //Object to represent a single Creature in the game.  Inherits from Card.
     /* name: The Creature's name
-     * hp: The Creature's max hp
+     * maxHP: The Creature's max hp
      * atk: The Creature's attack
-     * state: Where the Creature is.  Graveyard, hand, field, exile, deck, maybe others
      * special: The functions that should be called for special events: ETB, death, EoT, etc
      */
 
-    Card.call(this, original); //Calls parent constructor
+    Card.call(this, original, id); //Calls parent constructor
 
     this.maxHP = original.defense;
     this.HP = original.defense;
     this.atk = original.attack;
-    this.state = state || "";
+    this.state = "";
     this.controller; //Variable to store the controller of the creature, only valid while it is in play
-
+    this.attackCount = 0; //How many times the creature has attacked this turn.  Resets every turn.
 }
 
 Creature.prototype = Object.create(Card.prototype); //Inheriting line
@@ -95,7 +96,7 @@ Creature.prototype.takeDamage = function(amount) {
 Creature.prototype.die = function() {
     if (this.func["die"] != undefined){  //Has a special death function which should specify eventual state and other things
         events.trigger("log", this.name + " had a special death");
-        this.state = this.func["die"].call(this);
+        this.state = this.func["die"].call(this) || "graveyard"; //Special death function can return a state for the creature to be in (eg: kaguya)
     }
     else {
         this.state = "graveyard";
@@ -103,6 +104,7 @@ Creature.prototype.die = function() {
     }
 
     events.trigger("log", this.name + " has died");
+    events.trigger("died", this.id);
 }
 
 Creature.prototype.play = function(){
@@ -112,14 +114,18 @@ Creature.prototype.play = function(){
         this.func["play"].call(this);
 }
 
+/*
+Old way of checking for creature triggers, no longer in use but kept in case the new way hits a snag somewhere
 Creature.prototype.turnEnd = function() {
     if (this.func["end"])
         this.func["end"].call(this);
 }
+*/
+// Returns a function that controls what happens to the creature during an event.
+// See triggerTypes.txt for a work-in-progress list of trigger names.
 
-//Returns a function that controls what happens to the creature at the start of the turn.
 Creature.prototype.handleEvent = function(eventType){
-    var c = this;    
+    var c = this;
     if (c.func[eventType])
         return function(){return c.func[eventType].call(c);};
     return false;

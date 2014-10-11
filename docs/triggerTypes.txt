@@ -1,0 +1,15 @@
+PLAYER RELATED TRIGGERS:
+
+upkeep : Triggered during your upkeep
+die : Triggered when you have a creature die
+etb : Triggered when you have a creature etb
+end : Triggered at end of your turn
+
+
+
+OPPONENT RELATED TRIGGERS:
+
+oppupkeep : Triggered during your opponent's upkeep
+oppdie : Triggered when an opponent's creature dies
+oppetb : Triggered when an opponent's creature etb
+oppend : Triggered at end of opponent's turn
