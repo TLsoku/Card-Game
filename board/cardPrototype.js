@@ -44,7 +44,7 @@ function Spell(original){
 
     //TESTING: ALL SPELLS ARE A TEST SPELL
     this.text = "Deal 20 damage to target creature.";
-    this.effect = function() {GAME.chooseTarget(function(target) {this.dealDamage(target, 20);}, this);};
+    this.effect = function() {GAME.chooseTarget(function(target) {this.dealDamage(target, 20);}, GAME.findCreature(), this);};
 }
 
 Spell.prototype = Object.create(Card.prototype);
@@ -58,6 +58,24 @@ Spell.prototype.dealDamage = function(target, amount) {
     target.takeDamage(amount);
 }
 
+//
+//  Field prototype
+
+function Field(original){
+    Card.call(this, original);
+    //this.effect = original.effect;
+
+    this.text = "Field: currently not implemented.";
+}
+
+Field.prototype = Object.create(Card.prototype);
+
+Field.prototype.play = function() {
+    events.trigger("log", "Played a " + this.name);
+}
+
+//
+//  Creature prototype
 //
 //  Creature prototype
 
@@ -76,6 +94,8 @@ function Creature(original, id) { //Object to represent a single Creature in the
     this.state = "";
     this.controller; //Variable to store the controller of the creature, only valid while it is in play
     this.attackCount = 0; //How many times the creature has attacked this turn.  Resets every turn.
+    this.intercepts = 0;
+    this.maxIntercepts = 1;
 }
 
 Creature.prototype = Object.create(Card.prototype); //Inheriting line
@@ -84,7 +104,13 @@ Creature.prototype.fight = function(opp) {
     events.trigger("log", this.name + " and " + opp.name + " fight!");
     this.takeDamage(opp.atk);
     opp.takeDamage(this.atk);
+}
 
+Creature.prototype.intercept = function(opp) {
+    events.trigger("log", this.name + " intercepts " + opp.name + "!");
+    this.intercepts += 1;
+    this.takeDamage(opp.atk);
+    opp.takeDamage(Math.floor(this.atk/2));
 }
 
 Creature.prototype.takeDamage = function(amount) {

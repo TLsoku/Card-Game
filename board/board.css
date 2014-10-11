@@ -60,8 +60,19 @@ div {
 
 .thumbnail {
 	height: 90%;
-	top:9%;
-	width:9%;
+	top: 9%;
+	width: 9%;
+}
+
+.thumbnail span {
+/*TODO: REMOVE*/
+    z-index:100;
+    position:absolute;    
+    color:red;
+    font-size: 25px;
+    font-weight: bold;
+    left:5%;
+    top:30%;
 }
 
 .field .thumbnail {

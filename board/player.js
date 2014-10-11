@@ -45,7 +45,7 @@ function Player(deck) {
 Player.prototype.upkeep = function(){
     this.points += this.pointEssences.length;
     this.power += this.powerEssences.length;
-    if (this.creatures) this.creatures.forEach(function(c) {console.log(c);c.attackCount = 0;});
+    if (this.creatures) this.creatures.forEach(function(c) {c.attackCount = 0; c.intercepts = 0;});
     events.trigger("event", "upkeep"); //Trigger an event for upkeep to signal other player and signal your own creatures
     this.draw(1);
     events.trigger("resource", this);
