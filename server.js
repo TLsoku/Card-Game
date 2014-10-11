@@ -37,11 +37,13 @@ function gamePrep(socket) {
 
 //Card game stuff above this point
 
-
+var listenPort;
 if (!process.argv[2]){
-	console.log("Please specify the port to listen on.");
-	process.exit();
+    console.log("Port defaulting to 10800");
+    listenPort = 10800;
 }
+else
+    listenPort = process.argv[2];
 
 var welcomeMessage = process.argv[3] || "Welcome to chat!";
 
@@ -57,7 +59,7 @@ var app = require('http').createServer(handler)
 
 var blacklist = []; //Blacklisted IP addresses (banned users)
 
-app.listen(process.argv[2]);
+app.listen(listenPort);
 io.set('log level', 1);
 
 function handler (req, res) {
