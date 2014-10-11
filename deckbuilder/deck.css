@@ -2,7 +2,7 @@
 
 .detailed{
 		position: absolute;
-        background-image: url('../images/cardBase.png');
+        background-image: url('/images/cardBase.png');
         background-color: white;
         background-size: contain;
 	    font-size: 2vmin;

@@ -17,8 +17,14 @@ function gamePrep(socket) {
 		data.player = 'opponent';
 		socket.broadcast.emit('stats', data);
 	});
-	socket.on('addToField', function(card){
-		socket.broadcast.emit('addToField', card);
+	socket.on('addToField', function(card, id){
+		socket.broadcast.emit('addToField', card,(0-id));
+	});
+	socket.on('phase', function(phase){
+		socket.broadcast.emit('phase', 'opp' + phase);
+	});
+	socket.on('attack', function(attacker, target){
+		socket.broadcast.emit('phase', 'opp' + phase);
 	});
 	
 	
@@ -63,23 +69,23 @@ function handler (req, res) {
   if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
   
   if (pathname == "/decksave") {
-	if (req.method == 'POST') {
-		console.log("posted a deck");
-	
-	req.on('data', function(chunk) {
-	  req.content = (req.content ? req.content + chunk : chunk);
-    });
-    
-    req.on('end', function() {
-      // empty 200 OK response for now
-	  if (validDeck(req.content.toString())) fs.appendFile("decks.txt", req.content.toString() + "\n");
-	  console.log(req.content.toString());
-      res.writeHead(200, "OK", {'Content-Type': 'text/html'});
-      res.end();
-    });
-	}
-	return;
-	}
+      if (req.method == 'POST') {
+          console.log("posted a deck");
+
+          req.on('data', function(chunk) {
+                  req.content = (req.content ? req.content + chunk : chunk);
+                  });
+
+          req.on('end', function() {
+                  // empty 200 OK response for now
+                  if (validDeck(req.content.toString())) fs.appendFile("decks.txt", req.content.toString() + "\n");
+                  console.log(req.content.toString());
+                  res.writeHead(200, "OK", {'Content-Type': 'text/html'});
+                  res.end();
+                  });
+      }
+      return;
+  }
   //if (pathname == "/testbgm.ogg"){
 	//res.writeHead(200);
 	//console.log(req);
