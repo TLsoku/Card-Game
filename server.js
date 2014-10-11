@@ -100,11 +100,18 @@ function handler (req, res) {
 
   //}else
 	//res.writeHead(200);
-
-  data = fs.readFileSync(__dirname + '' + pathname);//'/index.html')
-
+    try {
+        data = fs.readFileSync(__dirname + '' + pathname);
+    }
+    catch (e) {
+        console.log(e.path);
+        res.writeHead(404);
+        data = fs.readFileSync(__dirname + '/notfound.html');
+        res.end(data);
+        return;
+    }
   //res.writeHead(200);
-  res.end(data);
+    res.end(data);
 
 }
 
