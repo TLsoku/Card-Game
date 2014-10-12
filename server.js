@@ -74,8 +74,13 @@ io.set('log level', 1);
 function handler (req, res) {
 
   res.setHeader("Accept-Ranges", "bytes");
-  pathname = url.parse(req.url).pathname;
-  console.log(pathname);
+    pathname = url.parse(req.url).pathname;
+    var ip = req.headers['x-forwarded-for'] || 
+     req.connection.remoteAddress || 
+     req.socket.remoteAddress ||
+     req.connection.socket.remoteAddress;
+
+    console.log(ip + " requested the page " + pathname);
 
   if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
 
@@ -97,17 +102,21 @@ function handler (req, res) {
       }
       return;
   }
-  //if (pathname == "/testbgm.ogg"){
-	//res.writeHead(200);
-	//console.log(req);
-
+  if (pathname == "/images/notfound.jpg"){
+    console.log("load from cache");
+    res.writeHead(304, {
+        "Last-Modified": "hi" 
+    });
+    res.end();
+    return;
+  }
   //}else
 	//res.writeHead(200);
     try {
         data = fs.readFileSync(__dirname + '' + pathname);
     }
     catch (e) {
-        console.log(e.path);
+        console.log("ERROR -- " + e.path + " not found.  Referrer: " +  req.headers['referer']);
         res.writeHead(404);
         data = fs.readFileSync(__dirname + '/notfound.html');
         res.end(data);
