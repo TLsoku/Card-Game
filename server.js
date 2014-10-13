@@ -1,3 +1,6 @@
+var IMGPATHRE = /\.(jpg|png|gif)$/
+var SOUNDPATHRE = /\.(ogg|mp3|wav)$/
+
 function validDeck(deck) {
 	var total = 0;
 	var parsedDeck = JSON.parse(deck);
@@ -72,7 +75,6 @@ app.listen(listenPort);
 io.set('log level', 1);
 
 function handler (req, res) {
-
   res.setHeader("Accept-Ranges", "bytes");
     pathname = url.parse(req.url).pathname;
     var ip = req.headers['x-forwarded-for'] || 
@@ -80,13 +82,11 @@ function handler (req, res) {
      req.socket.remoteAddress ||
      req.connection.socket.remoteAddress;
 
-    console.log(ip + " requested the page " + pathname);
-
   if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
 
   if (pathname == "/decksave") {
       if (req.method == 'POST') {
-          console.log("posted a deck");
+          console.log(ip + "posted a deck");
 
           req.on('data', function(chunk) {
                   req.content = (req.content ? req.content + chunk : chunk);
@@ -102,30 +102,101 @@ function handler (req, res) {
       }
       return;
   }
-  if (pathname == "/images/notfound.jpg"){
-    console.log("load from cache");
-    res.writeHead(304, {
-        "Last-Modified": "hi" 
-    });
-    res.end();
-    return;
-  }
-  //}else
-	//res.writeHead(200);
     try {
-        data = fs.readFileSync(__dirname + '' + pathname);
-    }
-    catch (e) {
-        console.log("ERROR -- " + e.path + " not found.  Referrer: " +  req.headers['referer']);
-        res.writeHead(404);
-        data = fs.readFileSync(__dirname + '/notfound.html');
-        res.end(data);
+        var data = fs.readFileSync(__dirname + pathname);
+    } catch(e) {
+        notFoundError(e, req, res, pathname, ip);
         return;
     }
-  //res.writeHead(200);
-    res.end(data);
+   //Get some info about the file
+   var stats = fs.statSync(__dirname + pathname);
+   var mtime = stats.mtime;
+   var size = stats.size;
 
+   //Get the if-modified-since header from the request
+   var reqModDate = req.headers["if-modified-since"];
+
+   //check if if-modified-since header is the same as the mtime of the file 
+   if (reqModDate != null) {
+       reqModDate = new Date(reqModDate);
+       if(reqModDate.getTime() == mtime.getTime()) {
+           //Yes: then send a 304 header without data (will be loaded by cache)
+            console.log(ip + " got resource " + pathname + " from cache.");
+           res.writeHead(304, {
+                   "Last-Modified": mtime.toUTCString()
+                   });
+
+           res.end();
+           return true;
+       }
+    }
+     
+   //NO: then send the headers and the file
+    console.log(ip + " got resource " + pathname + " from server.");
+   res.writeHead(200, {
+           "Last-Modified": mtime.toUTCString(),
+           "Content-Length": size
+           });
+
+   res.write(data);
+   res.end();
+   return;
 }
+
+function notFoundError(e, req, res, pathname, ip){
+    console.log("ERROR -- " + e.path + " not found.  Referrer: " +  req.headers['referer'] + " User ip: " + ip);
+    res.writeHead(404);
+    data = fs.readFileSync(__dirname + '/notfound.html');
+    res.end(data);
+    return;
+}
+
+/* Unused function for getting cached stuff.  Contents put into main req handler
+function getFromCache(pathName, request, response) {
+    console.log(pathName);
+    //Get the image from filesystem
+    var img = fs.readFileSync(__dirname + pathName);
+
+   //Get some info about the file
+   var stats = fs.statSync(__dirname + pathName);
+   var mtime = stats.mtime;
+   var size = stats.size;
+
+   //Get the if-modified-since header from the request
+   var reqModDate = request.headers["if-modified-since"];
+
+   //check if if-modified-since header is the same as the mtime of the file 
+   if (reqModDate!=null) {
+       reqModDate = new Date(reqModDate);
+       if(reqModDate.getTime()==mtime.getTime()) {
+           //Yes: then send a 304 header without data (will be loaded by cache)
+           console.log("load from cache");
+           response.writeHead(304, {
+                   "Last-Modified": mtime.toUTCString()
+                   });
+
+           response.end();
+           return true;
+       }
+    }
+     
+   //NO: then send the headers and the image
+   console.log("no cache");
+   response.writeHead(200, {
+          // "Content-Type": "image/jpg",
+           "Last-Modified": mtime.toUTCString(),
+           "Content-Length": size
+           });
+
+   response.write(img);
+   response.end();
+   return true;
+}
+*/
+
+
+
+
 
 io.sockets.on('connection', function (socket) {
 	gamePrep(socket);
