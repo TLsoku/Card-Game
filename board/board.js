@@ -1,7 +1,7 @@
 //------Sockets--------
 var socket = io.connect();
-socket.on('turn', function(data) {alert("your turn"); GAME.players[0].turn.start();});
-socket.on('stats', function(data) {Display.updateStats(data);});
+socket.on('turn', function(data) {alert("your turn"); GAME.yourTurn = true; GAME.players[0].turn.start();});
+socket.on('stats', function(data) {Display.updatePlayerStats(data);});
 socket.on('addToField', function(card, id) {var card = CardUtils.createCard(card, id);  card.controller = GAME.players[1];  Display.addToField(card, false);});
 
 socket.on('event', function(type){
@@ -12,21 +12,39 @@ socket.on('died', function(id){
     card.controller.removeFromCreatures(card);
 });
 
-socket.on('attack', function(attacker, target){
-    alert(GAME.getCardByID(attacker).name + " is attacking " + GAME.getCardByID(target).name);
-
-    //TODO: Choose an interceptor in here
-    GAME.getCardByID(attacker).fight(GAME.getCardByID(target));
-    socket.emit('intercept');
+socket.on('attack', function(a, t){
+    var attacker = GAME.getCardByID(a);
+    var target = GAME.getCardByID(t);
+    alert(attacker.name + " is attacking " + target.name);
+    
+    GAME.chooseTarget(function(interceptor){
+        if (interceptor == target){
+            socket.emit('combat', {intercept: false, attackerID: attacker.id, targetID: target.id});
+            target.fight(attacker);
+        }
+        else {
+            interceptor.intercept(attacker);
+            socket.emit('combat', {intercept: true, attackerID: attacker.id, targetID: interceptor.id});
+        }        
+        Display.updateCreatureStats(attacker);
+        Display.updateCreatureStats(interceptor);
+    }, GAME.findInterceptor(), attacker); 
 });
 
-socket.on('intercept', function(interceptor) {
-    interceptor = (interceptor ? GAME.getCardByID(interceptor) : interceptor);
-    events.trigger('intercept', interceptor);
+socket.on('combat', function(data) {
+    var attacker = GAME.getCardByID(data.attackerID);
+    var target = GAME.getCardByID(data.targetID);
+    if (data.intercept)
+        target.intercept(attacker);
+    else
+        target.fight(attacker);
+    Display.updateCreatureStats(attacker);
+    Display.updateCreatureStats(target);
 });
 
 function endTurn(){
     GAME.players[0].turn.end();
+    GAME.yourTurn = false;
     socket.emit('turn', 1);
 }
 
@@ -37,7 +55,7 @@ function endTurn(){
 var events = $({});
 
 function statsChanged(stats){
-    Display.updateStats(stats);
+    Display.updatePlayerStats(stats);
     socket.emit('stats', stats);
 }
 
@@ -77,7 +95,7 @@ details: $("#gameScreen .detailed"),
     thumbnail: null,
     init: function() {
         var t = this;
-        var thumb = $("<div class='thumbnail'> <img style='height:100%; width:100%'/> </div>");
+        var thumb = $("<div class='thumbnail'> <img style='height:100%; width:100%'/> <span></span> </div>");
         thumb.mouseover(function() {t.showDetails($(this).data());})
             .mouseout(function() {t.showDetails();});
         this.thumbnail = thumb;
@@ -120,9 +138,10 @@ details: $("#gameScreen .detailed"),
             .find("img").attr("src", card.image);
         if (player) { //You can only use your own creatures to attack or use abilities
             card.div.click(function(e){
-               if (card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, card);
+               if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
+        this.updateCreatureStats(card);
         this.positionThumbnails($placement);
     },
     removeFromField: function(card){
@@ -149,24 +168,33 @@ details: $("#gameScreen .detailed"),
             $(this).css("left", (index*10) + "%");
         });
     },
-    showTargetting: function(){
-        $(".field .thumbnail").toggleClass("glow", true).on("click.target", function(){
-            events.trigger("target", $(this).data().id);
-            $(".field .thumbnail").toggleClass("glow", false).off("click.target");
-        });
+    // Valid targets: A list of the IDs of all cards which should get the targetting highlight
+    showTargetting: function(validTargets){
+        $(".field .thumbnail").each(function(){
+            var $this = $(this);
+            if (_.contains(validTargets, $this.data().id))
+                $this.toggleClass("glow", true).on("click.target", function(){
+                    events.trigger("target", $this.data().id);
+                    $(".field .thumbnail").toggleClass("glow", false).off("click.target");
+                });
+            });
     },
-    updateStats: function(stats){
+    updatePlayerStats: function(stats){
         var statContainer;
         if (stats.player == 'you') statContainer = $(".stats.player").html('');
         else if (stats.player == 'opponent') statContainer = $(".stats.opponent").html('');
         for (key in stats)
             statContainer.append($("<p>" + key + ":  " + stats[key] + "</p>"));
+    },
+    updateCreatureStats: function(card){
+        card.div.find("span").html(card.atk + " -- " + card.HP + "/" + card.maxHP);
     }
 }
 
 var GAME = {
     cards: [],
     players: [],
+    yourTurn: false,
     init: function() {
         if (!(localStorage['My deck'])) { //TODO: Let them load a deck of their choice
            alert("Save a deck with the name 'My deck' in order to play. (The default deck name)");
@@ -191,9 +219,10 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
 
         this.players.push(new Player());
     },
-    chooseTarget: function(callback, context) { //Prompts the player to choose a target, then calls the callback function on the chosen target
+    chooseTarget: function(callback, validTargets, context) { //Prompts the player to choose a target, then calls the callback function on the chosen target
+        if (!validTargets) return; // No targets = no prompt or highlighting.
         events.trigger("log", "choose a target");
-        Display.showTargetting();
+        Display.showTargetting(validTargets);
         events.one("target", function(event, id) {
             var target = GAME.getCardByID(id);
             callback.call(context,target);
@@ -289,7 +318,6 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
     // How to use: Pass in an array of functions of any size, in the order they should execute.
     //             Functions that require waiting for user input should return true, other functions should return false
     // Calling the function with no argument or an empty list will not cause crashes, but will have no effect.
-    // Currently not complete: Waits 3 seconds rather than for user input during choices.
     sequentialAbilityTriggers: (function(){
 
         function ability(effect, after, wait){
@@ -312,7 +340,6 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             ability(abilities[0],after[0], false);
         }
     })(),
-
     // Pass in an ID number for a card (each card gets a unique one), get back the card itself.  Simple.
     getCardByID: function(id){
         var foundCard = _.find(this.cards, function(c){return c.id == id;});
@@ -320,6 +347,30 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         events.trigger("log", "Card with id " + id + " was not found.");
         return false;
     },
+    //Pass in a collection of cards (all, hand, creatures, etc) and a function that
+    //      returns true for cards which should be targetable and false for ones that should not
+    //      Alternatively, don't pass any function to find all the passed-in cards
+    //This function will return a list of IDs for cards that match
+    findTargets:  function(cards, f){
+        if (typeof f == 'undefined')
+            return _.pluck(cards, "id");
+        return _.pluck(_.filter(cards, f), "id");
+    },
+
+    //Some premade findTargets calls for common usage
+    findOppCreature: function(){
+        return this.findTargets(this.cards, function(c) {return c.controller == GAME.players[1];});
+    },
+    findInterceptor: function(){
+        return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
+    },
+    findCreature: function(f){
+        if (f) 
+            return this.findTargets(this.cards, function(c) {return c instanceof Creature && f(c);});
+        return this.findTargets(this.cards, function(c) {return c instanceof Creature;});
+    }
 }
 Display.init();
 GAME.init();
+
+

@@ -1,3 +1,6 @@
+var IMGPATHRE = /\.(jpg|png|gif)$/
+var SOUNDPATHRE = /\.(ogg|mp3|wav)$/
+
 function validDeck(deck) {
 	var total = 0;
 	var parsedDeck = JSON.parse(deck);
@@ -31,9 +34,10 @@ function gamePrep(socket) {
         target *= -1;
         socket.broadcast.emit('attack', attacker, target);
     });
-    socket.on('intercept', function(interceptor){
-        interceptor = (interceptor ? interceptor * -1 : interceptor);
-        socket.broadcast.emit('intercept', interceptor);
+    socket.on('combat', function(data){
+        data.targetID *= -1;
+        data.attackerID *= -1;
+        socket.broadcast.emit('combat', data);
     });
 
 
@@ -45,11 +49,13 @@ function gamePrep(socket) {
 
 //Card game stuff above this point
 
-
+var listenPort;
 if (!process.argv[2]){
-	console.log("Please specify the port to listen on.");
-	process.exit();
+    console.log("Port defaulting to 10800");
+    listenPort = 10800;
 }
+else
+    listenPort = process.argv[2];
 
 var welcomeMessage = process.argv[3] || "Welcome to chat!";
 
@@ -65,20 +71,22 @@ var app = require('http').createServer(handler)
 
 var blacklist = []; //Blacklisted IP addresses (banned users)
 
-app.listen(process.argv[2]);
+app.listen(listenPort);
 io.set('log level', 1);
 
 function handler (req, res) {
-
   res.setHeader("Accept-Ranges", "bytes");
-  pathname = url.parse(req.url).pathname;
-  console.log(pathname);
+    pathname = url.parse(req.url).pathname;
+    var ip = req.headers['x-forwarded-for'] || 
+     req.connection.remoteAddress || 
+     req.socket.remoteAddress ||
+     req.connection.socket.remoteAddress;
 
   if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
 
   if (pathname == "/decksave") {
       if (req.method == 'POST') {
-          console.log("posted a deck");
+          console.log(ip + "posted a deck");
 
           req.on('data', function(chunk) {
                   req.content = (req.content ? req.content + chunk : chunk);
@@ -94,26 +102,101 @@ function handler (req, res) {
       }
       return;
   }
-  //if (pathname == "/testbgm.ogg"){
-	//res.writeHead(200);
-	//console.log(req);
-
-  //}else
-	//res.writeHead(200);
     try {
-        data = fs.readFileSync(__dirname + '' + pathname);
-    }
-    catch (e) {
-        console.log(e.path);
-        res.writeHead(404);
-        data = fs.readFileSync(__dirname + '/notfound.html');
-        res.end(data);
+        var data = fs.readFileSync(__dirname + pathname);
+    } catch(e) {
+        notFoundError(e, req, res, pathname, ip);
         return;
     }
-  //res.writeHead(200);
-    res.end(data);
+   //Get some info about the file
+   var stats = fs.statSync(__dirname + pathname);
+   var mtime = stats.mtime;
+   var size = stats.size;
 
+   //Get the if-modified-since header from the request
+   var reqModDate = req.headers["if-modified-since"];
+
+   //check if if-modified-since header is the same as the mtime of the file 
+   if (reqModDate != null) {
+       reqModDate = new Date(reqModDate);
+       if(reqModDate.getTime() == mtime.getTime()) {
+           //Yes: then send a 304 header without data (will be loaded by cache)
+            console.log(ip + " got resource " + pathname + " from cache.");
+           res.writeHead(304, {
+                   "Last-Modified": mtime.toUTCString()
+                   });
+
+           res.end();
+           return true;
+       }
+    }
+     
+   //NO: then send the headers and the file
+    console.log(ip + " got resource " + pathname + " from server.");
+   res.writeHead(200, {
+           "Last-Modified": mtime.toUTCString(),
+           "Content-Length": size
+           });
+
+   res.write(data);
+   res.end();
+   return;
 }
+
+function notFoundError(e, req, res, pathname, ip){
+    console.log("ERROR -- " + e.path + " not found.  Referrer: " +  req.headers['referer'] + " User ip: " + ip);
+    res.writeHead(404);
+    data = fs.readFileSync(__dirname + '/notfound.html');
+    res.end(data);
+    return;
+}
+
+/* Unused function for getting cached stuff.  Contents put into main req handler
+function getFromCache(pathName, request, response) {
+    console.log(pathName);
+    //Get the image from filesystem
+    var img = fs.readFileSync(__dirname + pathName);
+
+   //Get some info about the file
+   var stats = fs.statSync(__dirname + pathName);
+   var mtime = stats.mtime;
+   var size = stats.size;
+
+   //Get the if-modified-since header from the request
+   var reqModDate = request.headers["if-modified-since"];
+
+   //check if if-modified-since header is the same as the mtime of the file 
+   if (reqModDate!=null) {
+       reqModDate = new Date(reqModDate);
+       if(reqModDate.getTime()==mtime.getTime()) {
+           //Yes: then send a 304 header without data (will be loaded by cache)
+           console.log("load from cache");
+           response.writeHead(304, {
+                   "Last-Modified": mtime.toUTCString()
+                   });
+
+           response.end();
+           return true;
+       }
+    }
+     
+   //NO: then send the headers and the image
+   console.log("no cache");
+   response.writeHead(200, {
+          // "Content-Type": "image/jpg",
+           "Last-Modified": mtime.toUTCString(),
+           "Content-Length": size
+           });
+
+   response.write(img);
+   response.end();
+   return true;
+}
+*/
+
+
+
+
 
 io.sockets.on('connection', function (socket) {
 	gamePrep(socket);
