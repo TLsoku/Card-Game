@@ -1,0 +1,107 @@
+div {
+	border: 1px solid black;
+	box-sizing: border-box;
+	position: absolute;
+	font-size: 2vmin;
+}
+
+.field{
+    top: 1.5%;
+	left: 21%;
+	width: 58%;
+	height: 41.5%;
+	background-color: #3c3;
+	overflow: auto;
+
+}
+
+.pointpile{
+    top: 1.5%;
+	left: 21%;
+	width: 59%;
+	height: 41.5%;
+	background-color: #3cc;
+	overflow: auto;
+    z-layer:2;
+}
+.background{
+	width: 100%;
+	height: 100%;
+    background-image: url('images/background.png');
+	overflow: auto;
+}
+.stats {
+	left: 79%;
+    top: 1.5%;
+	width: 20%;
+	height: 41.5%;
+	background-color: #c33;
+}
+
+.player {
+	top: 43%;
+}
+
+.chat {
+    left: 0.5%;
+    top: 1.5%;
+	width: 20%;
+	height: 97%;
+	background-color: #cc3;
+	text-align: bottom;
+	overflow:auto;
+}
+
+.hand {
+	background-color: #c3c;
+	top: 84.5%;
+	left: 21%;
+	width: 58%;
+	height: 14%;
+	overflow:auto;
+}
+
+.detailed {
+    left: 0.5%;
+    top: 1.5%;
+	width: 20%;
+	height: 53%;
+	background-image: url('images/cardBase.png');
+	background-color: white;
+	background-size: contain;
+	z-layer:2;
+}
+
+.menubuttons {
+    top: 84.5%;
+	width: 20%;
+	height: 14%;
+	left: 79%;
+	background-color: #3cc;
+}
+
+.thumbnail {
+	height: 90%;
+	top:9%;
+	width:9%;
+}
+
+.field .thumbnail {
+	height: 40%;
+	top: 29%
+}
+
+.glow {
+	border: 6px solid yellow;
+}
+
+#shader {
+	z-index: 9;
+	height: 100%;
+	width: 100%;
+	top: 0px;
+	left: 0px;
+	position: absolute;
+	background-color: #111;
+	opacity: 0.4;
+}
