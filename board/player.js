@@ -73,8 +73,9 @@ Player.prototype.removeFromHand = function(card) {  //Removes the specified card
 //
 // Playing as power essence and point essence could maybe be condensed into 2 functions rather than 4
 
-Player.prototype.playAsPoint = function(card) { //Plays a card as a points resource
+Player.prototype.playAsPoint = function(id) { //Plays a card as a points resource
     if (this.playedPoints) return false; //Can only play one point resource per turn
+    var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     this.playedPoints = true;
     this.addPointToField(card);
@@ -89,8 +90,9 @@ Player.prototype.addPointToField = function(card){
     events.trigger("essence", this);
 }
 
-Player.prototype.playAsPower = function(card) { //Plays a card as a power resource
+Player.prototype.playAsPower = function(id) { //Plays a card as a power resource
     if (this.playedPower) return false;
+    var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     this.playedPower = true;
     this.addPowerToField(card);
