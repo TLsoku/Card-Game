@@ -6,8 +6,11 @@ function Card(original, id) { //Object to represent a card.  Pass in the origina
     this.text = original.text;
     this.image = original.image;
 
-    //Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
-    this.func = original.special || [];
+    // Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
+    this.triggeredAbilities = original.triggered || [];
+
+    // Stores activated abilities of the card
+    this.activatedAbilities = original.activated || [];
     Card.cardInitCount++;
 
     // Each card generated on your side gets a unique positive ID number.  Each card generated on the opponent's side gets a unique negative
@@ -136,8 +139,8 @@ Creature.prototype.die = function() {
 Creature.prototype.play = function(){
     this.state = "field";
     events.trigger("log", this.owner.name + " played a " + this.name);
-    if (this.func["play"])
-        this.func["play"].call(this);
+    if (this.activatedAbilities["play"])
+        this.activatedAbilities["play"].call(this);
 }
 
 /*
@@ -152,8 +155,8 @@ Creature.prototype.turnEnd = function() {
 
 Creature.prototype.handleEvent = function(eventType){
     var c = this;
-    if (c.func[eventType])
-        return function(){return c.func[eventType].call(c);};
+    if (c.triggeredAbilities[eventType])
+        return function(){return c.triggeredAbilities[eventType].call(c);};
     return false;
 }
 

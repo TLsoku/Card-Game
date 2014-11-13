@@ -138,7 +138,7 @@ details: $("#gameScreen .detailed"),
             .find("img").attr("src", card.image);
         if (player) { //You can only use your own creatures to attack or use abilities
             card.div.click(function(e){
-               if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
+if (card.activatedAbilities["essenceify"]) card.activatedAbilities["essenceify"].call(card);//               if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
         this.updateCreatureStats(card);
@@ -361,6 +361,9 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
     findOppCreature: function(){
         return this.findTargets(this.cards, function(c) {return c.controller == GAME.players[1];});
     },
+    findYourCreature: function(){
+        return this.findTargets(this.cards, function(c) {return c.controller == GAME.players[0];});
+    },
     findInterceptor: function(){
         return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
     },
@@ -368,6 +371,17 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         if (f) 
             return this.findTargets(this.cards, function(c) {return c instanceof Creature && f(c);});
         return this.findTargets(this.cards, function(c) {return c instanceof Creature;});
+    },
+
+    choices: {
+        // A set of premade promptChoice calls for common usage
+        pointOrPower: function(message, player, card){
+            GAME.promptChoice("Turn the top card of your deck into an essence:", {
+                "Point": function() {player.addPointToField(card);},
+                "Power": function() {player.addPowerToField(card);}
+            }, this);
+            return true;
+        },
     }
 }
 Display.init();
