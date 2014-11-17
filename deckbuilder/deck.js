@@ -91,7 +91,7 @@ var DeckBuilder = {
             inList.find(".amount").html(this.deck[card.name]);
             return;
         }
-        
+
         // Otherwise, create a new row, give it the card name as a class and
         // Make it display magnified view on mouseover
         var newRow = this.textRow.clone(true).toggleClass(card.name.replace(/[\s'"]/g, ''));
@@ -109,7 +109,7 @@ var DeckBuilder = {
         });
 
         // Button for removing a copy
-        newRow.find(".less").click(function() { 
+        newRow.find(".less").click(function() {
             t.removeFromDeck(card);
 
             // If there are less than 4, the add button should reappear
