@@ -5,6 +5,8 @@ function Card(original, id) { //Object to represent a card.  Pass in the origina
     this.cost = original.cost;
     this.text = original.text;
     this.image = original.image;
+	this.controller; //Variable to store the controller of the creature, only valid while it is in play
+	this.state = "";
 
     //Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
     this.func = original.special || [];
@@ -65,13 +67,30 @@ function Field(original){
     Card.call(this, original);
     //this.effect = original.effect;
 
-    this.text = "Field: currently not implemented.";
+    this.text = "Field: currently not implemented unless Youkai Mountain and some other testing stuff.";
 }
 
 Field.prototype = Object.create(Card.prototype);
 
 Field.prototype.play = function() {
-    events.trigger("log", "Played a " + this.name);
+	this.state = "board";
+    events.trigger("log", this.owner.name + " played a " + this.name);
+    if (this.func["play"])
+        this.func["play"].call(this);
+}
+
+// Returns a function that controls what happens to the field during an event.
+// See triggerTypes.txt for a work-in-progress list of trigger names.
+
+Field.prototype.handleEvent = function(eventType){
+    var c = this;
+    if (c.func[eventType])
+        return function(){return c.func[eventType].call(c);};
+    return false;
+}
+
+Field.prototype.toString = function() {
+    return this.name + ":  costs " + this.cost;
 }
 
 //
@@ -91,8 +110,6 @@ function Creature(original, id) { //Object to represent a single Creature in the
     this.maxHP = original.defense;
     this.HP = original.defense;
     this.atk = original.attack;
-    this.state = "";
-    this.controller; //Variable to store the controller of the creature, only valid while it is in play
     this.attackCount = 0; //How many times the creature has attacked this turn.  Resets every turn.
     this.intercepts = 0;
     this.maxIntercepts = 1;
@@ -134,7 +151,7 @@ Creature.prototype.die = function() {
 }
 
 Creature.prototype.play = function(){
-    this.state = "field";
+    this.state = "board";
     events.trigger("log", this.owner.name + " played a " + this.name);
     if (this.func["play"])
         this.func["play"].call(this);
