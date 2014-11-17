@@ -1,8 +1,7 @@
 function prepList(list){
-    console.log('prep');
     var filteredList = list;
 
-    //Filters
+    // Filters based on the creatures/spells/field checkboxes
     if (!document.getElementById('creatures').checked)
         filteredList = _.filter(filteredList, function(c) {return c.type != 'Creature';});
     if (!document.getElementById('spells').checked)
@@ -10,7 +9,8 @@ function prepList(list){
     if (!document.getElementById('fields').checked)
         filteredList = _.filter(filteredList, function(c) {return c.type != 'Field';});
 
-    //Sort
+    // Sort based on the drop down menu.
+    // TODO: Add more sort types?
     var sortType = $('#filters option:selected').html();
     switch (sortType) {
         case ('Alphabetical'):
@@ -23,168 +23,156 @@ function prepList(list){
             break;
     }
 
-    //Search
+    // Search based on the contents of the typed input.
+    // TODO: Add more search types?
     var searchTerm = $('#filters input[type="text"]').val();
-    console.log(searchTerm);
     if (searchTerm)
-        filteredList = _.filter(filteredList, function(c) {return c.name.match(new RegExp('(?:^|\\s|\")' + searchTerm, 'i'));});
+        filteredList = _.filter(filteredList, function(c) {
+        // Regex to filter cards based on name.  The typed string will match the
+        //  starts of words in the card's name (eg: 'maid' matches 'fairy maid'
+            return c.name.match(new RegExp('(?:^|\\s|\")' + searchTerm, 'i'));
+        });
+
+    // Pick just the card names out of the list for proper tiling
     return (_.pluck(filteredList, 'name'));
 }
 
-var d = $("#cardpool");	
-CardUtils.tileCards(d,prepList(allCards));	
-
-$("#filters input[type='checkbox']").click(function() { CardUtils.tileCards(d, prepList(allCards));});
-$("#filters select").change(function() { CardUtils.tileCards(d, prepList(allCards));});
-$("#filters input[type='text']").on('input',function() { CardUtils.tileCards(d, prepList(allCards));});
 
 var DeckBuilder = {
     //Variables
-cards: allCards,
-       details: $(".detailed"), //The canvas to draw magnifications on
-       textRow: $("<p></p>").append($("<span class='name'></span>")).append($("<button class='more'> + </button>")).append($("<button class='less'> - </button>")).append($("<span class='amount'>1</span>")),
-       deck: {},
-       deckSize: 0,
-       thumb: $("<div class='thumbnail' style='position: absolute; top:0; left:0;'> <img style='height:100%; width:100%'/> </div>"),
+    cards: allCards,
+    details: $(".detailed"), //The canvas to draw magnifications on
+    textRow: $("<p></p>").append($("<span class='name'></span>")).append($("<button class='more'> + </button>")).append($("<button class='less'> - </button>")).append($("<span class='amount'>1</span>")),
+    deck: {},
+    deckSize: 0,
+    thumb: $("<div class='thumbnail' style='position: absolute; top:0; left:0;'> <img style='height:100%; width:100%'/> </div>"),
+    cardPool: $("#cardpool"),
 
-       showDetails: function(card) {
-           //Pass in nothing to hide the details that are currently displaying
+    // Refreshes the card pool based on search and filter criteria.
+    refreshCardPool: function(){
+        CardUtils.tileCards(this.cardPool, prepList(allCards));
+    },
 
-           if (card == undefined){
-               this.details.css("display", "none");
-               return;
-           }
-           this.details.find("img").attr("src", card.image);
-           this.details.find(".title").html(card.name);
-           this.details.find(".description").html(card.text);
-           this.details.css("display", "block");
-       },
+    //Adds a card to your deck.  If you have 4, do nothing instead of adding.
+    // TODO: Make some sort of "couldn't add card, only 4 allowed" notification
+    addToDeck: function(card){
 
-makeCardList: function() {
-                  var t = this;
-                  allCards.forEach(function(card) {
-                          $("<option>" + card.name + "</option>").appendTo($("select")).data(card);});
-                  $("select").change(function() {
-                          var choice = $(this).find("option:selected").data();
-                          t.addToDeck(choice);
-                          t.addToList(choice);
-                          });
+        if (!this.deck[card.name])
+            this.deck[card.name] = 1;
+        else if (this.deck[card.name] == 4)
+            return;
+        else
+            this.deck[card.name]++;
 
-              },
+        // Update the deck size
+        this.deckSize++;
+        $("#count").html(this.deckSize);
+    },
 
-addToDeck: function(card){
-               if (!this.deck[card.name])
-                   this.deck[card.name] = 1;
-               else if (this.deck[card.name] == 4)
-                   return;
-               else
-                   this.deck[card.name]++;
+    // Remove a copy of a card from the deck, which shrinks the deck size
+    removeFromDeck: function(card){
+        if (!this.deck[card.name])
+            return;
+        else
+            this.deck[card.name]--;
 
-               //Add the card image to the tabletop, classed with its name for easy finding
-               /*var theCard = this.thumb.clone(true);
-                 theCard.css({"top": ((this.deckSize % 6) * 20), "left": (Math.floor(this.deckSize/6) * 130)});
-                 theCard.toggleClass(card.name.replace(/[\s'"]/g, ''));
-                 theCard.find("img").attr("src", card.image);
-                 theCard.draggable({stack: ".thumbnail", containment: 'parent' });
-                 $("#deckDisplay").append(theCard);*/
-               this.deckSize++;
-               $("#count").html(this.deckSize);
-           },
+        if (this.deck[card.name] == 0)
+            delete this.deck[card.name];
 
-removeFromDeck: function(card){
-                    console.log(card);
-                    if (!this.deck[card.name])
-                        return;
-                    else
-                        this.deck[card.name]--;
-                    if (this.deck[card.name] == 0)
-                        delete this.deck[card.name];
+        this.deckSize--;
+        $("#count").html(this.deckSize);
+    },
 
-                    $("#deckDisplay").find("." + card.name.replace(/[\s'"]/g, '') + ":first").remove();
-                    this.deckSize--;
-                    $("#count").html(this.deckSize);
-                },
+    addToList: function(card){
 
-addToList: function(card){
-               if ($('#deckListing .' + card.name.replace(/[\s'"]/g, '')).length) {
-                   $('#deckListing .' + card.name.replace(/[\s'"]/g, '') + ' .amount').html(this.deck[card.name]);
-               return;
-           }
-           var newRow = this.textRow.clone(true).toggleClass(card.name.replace(/[\s'"]/g, ''), true);
-           var t = this;
-           newRow.find(".name").html(card.name)
-               .mouseover(function(e) {CardUtils.magnifyCard(card, e.pageX+5, e.pageY+5);})
-               .mouseout(function() {CardUtils.magnifyCard();});
+        // If the card is already in the list, just increment the counter
+        var inList = $('#deckListing .' + card.name.replace(/[\s'"]/g, ''));
+        if (inList.length){
+            inList.find(".amount").html(this.deck[card.name]);
+            return;
+        }
+        
+        // Otherwise, create a new row, give it the card name as a class and
+        // Make it display magnified view on mouseover
+        var newRow = this.textRow.clone(true).toggleClass(card.name.replace(/[\s'"]/g, ''));
+        var t = this;
+        newRow.find(".name").html(card.name)
+            .mouseover(function(e) {CardUtils.magnifyCard(card, e.pageX+5, e.pageY+5);})
+            .mouseout(function() {CardUtils.magnifyCard();});
 
-           newRow.find(".more").click(function() { //Button to add more copies, disappears at 4
-                   t.addToDeck(card);
-                   if (t.deck[card.name] == 4)
-                   this.style.display = "none";
-                   this.nextSibling.nextSibling.innerHTML = t.deck[card.name];
-                   });
+        // Button for adding more copies
+        newRow.find(".more").click(function() {
+            t.addToDeck(card);
+            if (t.deck[card.name] == 4)
+                this.style.display = "none"; //Button disappears at 4 copies
+            this.nextSibling.nextSibling.innerHTML = t.deck[card.name];
+        });
 
-           newRow.find(".less").click(function() { //Button to remove copies, should make add button reappear or entire row disappear if last copy is removed
-                   t.removeFromDeck(card);
-                   if (t.deck[card.name] < 4)
-                   this.previousSibling.style.display = "inline";
-                   if (!t.deck[card.name])
-                   $(this).parent().remove();
-                   this.nextSibling.innerHTML = t.deck[card.name];
-                   });
-           $("#deckListing").append(newRow);
+        // Button for removing a copy
+        newRow.find(".less").click(function() { 
+            t.removeFromDeck(card);
 
-           },
+            // If there are less than 4, the add button should reappear
+            if (t.deck[card.name] < 4)
+                this.previousSibling.style.display = "inline";
+            if (!t.deck[card.name])
+                $(this).parent().remove();
+            this.nextSibling.innerHTML = t.deck[card.name];
+        });
 
-clear: function(){
-           $("#deckListing").html('');
-           for (var n in this.deck)
-               for (var i = 0; i < this.deck[n]; i++)
-                   this.removeFromDeck(_.findWhere(allCards, {'name': n}));
-       },
+        $("#deckListing").append(newRow);
+    },
 
-save: function(name){
-          localStorage[name] = JSON.stringify(this.deck);
-          alert("Saved deck with name " + name);
-          $.post("/decksave", JSON.stringify(this.deck));
-      },
+    // Clear the deck by removing all cards one at a time
+    clear: function(){
+        $("#deckListing").html('');
+        for (var n in this.deck)
+            for (var i = 0; i < this.deck[n]; i++)
+                this.removeFromDeck(_.findWhere(allCards, {'name': n}));
+    },
 
-load: function(name){
-          if (typeof localStorage[name] == undefined) return;
+    // Save a deck on the server by sending a POST to /decksave with the stringified deck
+    // Also saves it in localStorage for use in games
+    save: function(name){
+        localStorage[name] = JSON.stringify(this.deck);
+        alert("Saved deck with name " + name);
+        $.post("/decksave", JSON.stringify(this.deck));
+    },
 
-          var toLoad = JSON.parse(localStorage[name]);
-          this.clear();
-          for (n in toLoad) 
-              for (var i = 0; i < toLoad[n]; i++){
-                  var addingCard = _.findWhere(allCards, {'name': n})
-                      this.addToDeck(addingCard);
-                  this.addToList(addingCard);
-              }
-      }
+    // Load a deck by looking for a deck with that name in localStorage
+    // TODO: Make it try to load from server as well?  Might need user accounts
+    load: function(name){
+        if (typeof localStorage[name] == undefined) return;
 
+        // Clear whatever cards were in the deck before they pressed load
+        this.clear();
+
+        var toLoad = JSON.parse(localStorage[name]);
+        for (n in toLoad){
+            var addingCard = _.findWhere(allCards, {'name': n})
+            for (var i = 0; i < toLoad[n]; i++){
+                this.addToDeck(addingCard);
+                this.addToList(addingCard);
+            }
+        }
+    },
 }
 
-var Deck = {
-cards: [],
-       addCard: function(){
+DeckBuilder.refreshCardPool();
+$("#filters input[type='checkbox']").click(function(){DeckBuilder.refreshCardPool();});
+$("#filters select").change(function(){DeckBuilder.refreshCardPool();});
+$("#filters input[type='text']").on('input', function(){DeckBuilder.refreshCardPool();});
 
-
-
-       },
-removeCard: function(){
-                this.cards.splice()
-
-
-            },
-}
-
-//DeckBuilder.makeCardList();
 $("#save").click(function() { DeckBuilder.save($("#deckName").val());});
 $("#load").click(function() { DeckBuilder.load($("#deckName").val());});
-$("#export").click(function() { 
-        $("textarea").remove();
-        var text ='';
-        for (name in DeckBuilder.deck) {
+
+// Export to a text format for cockatrice.
+// TODO: Decide if we still need this functionality and/or reformat the export
+$("#export").click(function() {
+    $("textarea").remove();
+    var text ='';
+    for (name in DeckBuilder.deck) {
         text += DeckBuilder.deck[name] + ' ' + name + '\n';
-        }
-        $("body").append($("<textarea>" + text + "</textarea>"));
-        });
+    }
+    $("body").append($("<textarea>" + text + "</textarea>"));
+});
