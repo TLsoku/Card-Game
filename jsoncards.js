@@ -211,8 +211,8 @@ allCards = [{
     special:{
         "upkeep": function(){
             GAME.promptChoice("Turn the top card of your deck into an essence:", {
-                "Point": function() {this.controller.addPointToField(this.controller.deck.shift());},
-                "Power": function() {this.controller.addPowerToField(this.controller.deck.shift());}
+                "Point": function() {this.controller.addPointToBoard(this.controller.deck.shift());},
+                "Power": function() {this.controller.addPowerToBoard(this.controller.deck.shift());}
             }, this);
             return true;
         }
@@ -237,7 +237,7 @@ allCards = [{
         "upkeep": function(){
             GAME.promptResourcePayment("You may pay (2) to draw another card.", 2, this.controller,
                 function() {this.controller.draw(1);},
-            this);
+            this, false);
             return true;
         }
     },
@@ -503,8 +503,8 @@ allCards = [{
     special: {
         "die": function(){
             GAME.promptChoice("Turn Shizuha into what type of land?", {
-                "Point": function() {this.controller.addPointToField(this);},
-                "Power": function() {this.controller.addPowerToField(this);}
+                "Point": function() {this.controller.addPointToBoard(this);},
+                "Power": function() {this.controller.addPowerToBoard(this);}
             }, this);
             return true;
         }
@@ -653,6 +653,15 @@ allCards = [{
     type: 'Field',
     cost: 4,
     text: 'At the end of your turn, put the top card of your deck into play as an essence. Afterwards, if 2 or fewer essences have entered the battlefield under your control this turn, sacrifice Youkai Mountain.',
+	special: {
+		"end": function(){
+			GAME.promptChoice("Turn the top card of your deck into an essence:", {
+				"Point": function() {this.controller.addPointToBoard(this.controller.deck.shift());},
+				"Power": function() {this.controller.addPowerToBoard(this.controller.deck.shift());}
+			}, this);
+			return true;
+		}
+	}
 },{
     name: 'Youmu',
     image: 'http://i.imgur.com/xbV86bp.jpg',
