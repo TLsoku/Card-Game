@@ -5,7 +5,7 @@ div {
     font-size: 2vmin;
 }
 
-.field{
+.board{
     top: 1.5%;
     left: 21%;
     width: 58%;
@@ -88,7 +88,7 @@ div {
     width:9%;
 }
 
-.field .thumbnail {
+.board .thumbnail {
     height: 40%;
     top: 29%
 }
