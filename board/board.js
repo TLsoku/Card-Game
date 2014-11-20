@@ -1,12 +1,24 @@
 //------Sockets--------
 var socket = io.connect();
-socket.on('turn', function(data) {alert("your turn"); GAME.yourTurn = true; GAME.players[0].turn.start();});
+
+socket.on('turn', function(data) {
+    alert("your turn");
+    GAME.yourTurn = true;
+    GAME.players[0].turn.start();
+});
+
 socket.on('stats', function(data) {Display.updatePlayerStats(data);});
-socket.on('addToField', function(card, id) {var card = CardUtils.createCard(card, id);  card.controller = GAME.players[1];  Display.addToField(card, false);});
+
+socket.on('addToField', function(card, id) {
+    var card = CardUtils.createCard(card, id);
+    card.controller = GAME.players[1];
+    Display.addToField(card, false);
+});
 
 socket.on('event', function(type){
     GAME.players[0].creatureEvents(type);
 });
+
 socket.on('died', function(id){
     var card = GAME.getCardByID(id);
     card.controller.removeFromCreatures(card);
@@ -16,7 +28,7 @@ socket.on('attack', function(a, t){
     var attacker = GAME.getCardByID(a);
     var target = GAME.getCardByID(t);
     alert(attacker.name + " is attacking " + target.name);
-    
+
     GAME.chooseTarget(function(interceptor){
         if (interceptor == target){
             socket.emit('combat', {intercept: false, attackerID: attacker.id, targetID: target.id});
@@ -25,10 +37,10 @@ socket.on('attack', function(a, t){
         else {
             interceptor.intercept(attacker);
             socket.emit('combat', {intercept: true, attackerID: attacker.id, targetID: interceptor.id});
-        }        
+        }
         Display.updateCreatureStats(attacker);
         Display.updateCreatureStats(interceptor);
-    }, GAME.findInterceptor(), attacker); 
+    }, GAME.findInterceptor(), attacker);
 });
 
 socket.on('combat', function(data) {
@@ -47,7 +59,6 @@ function endTurn(){
     GAME.yourTurn = false;
     socket.emit('turn', 1);
 }
-
 
 
 //------Events----------
@@ -71,27 +82,35 @@ events.on('life', function(e, player) {statsChanged(player.getStats());});
 events.on('essence', function(e, player) {statsChanged(player.getStats());});
 events.on('deck', function(e, player) {statsChanged(player.getStats());});
 
-// Event that triggers on a variety of game events.  Will signal the other player it occured, as well as trigger the abilities
-// for that event for all creatures you control.  Your creature abilities trigger before your opponent's.
+// Event that triggers on a variety of game events.  Will signal the other player
+//  it occured, as well as trigger the abilities for that event for all creatures
+//  you control.  Your creature abilities trigger before your opponent's.
 events.on('event', function(e, type) {
     GAME.players[0].creatureEvents(type);
     socket.emit("event", type);
 })
 
 //Logging event, currently logs to console and chat
-events.on('log', function(e, message) {$("div.chat").append($("<p>"+message+"</p>")); console.log(message);});
+events.on('log', function(e, message) {
+    $("div.chat").append($("<p>"+message+"</p>"));
+     console.log(message);
+});
 
 //Attack event, sends attack signal to other player
 events.on('attack', function(e, attacker, target) {
    socket.emit("attack", attacker, target);
 });
+
 events.on('died', function(e, id) {
    socket.emit("died",id);
 });
 
-//------------- The Display, how things look on the screen and control of visual aspects ---------
+
+
+
+//------------- The Display, how things look on the screen and control of visual aspects ----
 var Display = {
-details: $("#gameScreen .detailed"),
+    details: $("#gameScreen .detailed"),
     thumbnail: null,
     init: function() {
         var t = this;
@@ -365,7 +384,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
     },
     findCreature: function(f){
-        if (f) 
+        if (f)
             return this.findTargets(this.cards, function(c) {return c instanceof Creature && f(c);});
         return this.findTargets(this.cards, function(c) {return c instanceof Creature;});
     }
