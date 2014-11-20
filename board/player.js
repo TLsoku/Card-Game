@@ -9,6 +9,7 @@ function Player(deck) {
      */
     this.hand = [];
     this.creatures=[];
+	this.fields=[];
     this.name = "Test Player";
     //Create the deck, shuffle it, and set all the cards owners
     this.deck = deck || [];
@@ -78,13 +79,13 @@ Player.prototype.playAsPoint = function(id) { //Plays a card as a points resourc
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     this.playedPoints = true;
-    this.addPointToField(card);
+    this.addPointToBoard(card);
     return true;
 }
 
-// Puts a card onto the field as a point resource.  NOTE: Not the same as playing a point resource from hand.
+// Puts a card onto the board as a point resource.  NOTE: Not the same as playing a point resource from hand.
 // Playing a point resource from hand will use this, but also cards like Kanako.
-Player.prototype.addPointToField = function(card){
+Player.prototype.addPointToBoard = function(card){
     card.state = "land";
     this.pointEssences.push(card);
     events.trigger("essence", this);
@@ -95,28 +96,35 @@ Player.prototype.playAsPower = function(id) { //Plays a card as a power resource
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     this.playedPower = true;
-    this.addPowerToField(card);
+    this.addPowerToBoard(card);
     return true;
 }
 
-//Puts a card onto the field as a power resource.  NOTE: Not the same as playing a power resource from hand.
-Player.prototype.addPowerToField = function(card){
+//Puts a card onto the board as a power resource.  NOTE: Not the same as playing a power resource from hand.
+Player.prototype.addPowerToBoard = function(card){
     card.state = "land";
     this.powerEssences.push(card);
     events.trigger("essence", this);
 }
 
 Player.prototype.addToCreatures = function(card) {
-    card.state = "field";
+    card.state = "board";
     card.controller = this;
     this.creatures.push(card);
     events.trigger("newCard", card);
     //card.addTriggers();
 }
 
+Player.prototype.addToFields = function(card) {
+	card.state = "board";
+	card.controller = this;
+	this.fields.push(card);
+	events.trigger("newCard", card);
+}
+
 Player.prototype.removeFromCreatures = function(card) {
     this.creatures = _.without(this.creatures, card);
-    Display.removeFromField(card);
+    Display.removeFromBoard(card);
     //card.removeTriggers();
 }
 
@@ -133,6 +141,32 @@ Player.prototype.playCreature = function(id) {
     }
     else
         events.trigger("log", "not enough points to play " + card.name);
+}
+
+Player.prototype.playField = function(id) {
+	var card = GAME.getCardByID(id);
+	
+	// First, check if it's possible to pay with either points or power. If it's possible,
+	// then see how the player wants to pay it. They also have the option to cancel.
+	if (this.points >= card.cost || this.power >= card.cost)
+	{
+		// note that we can send "this" for the player who is paying for it, since this is method under Player
+		GAME.promptResourcePayment("You must pay (" + card.cost + ") for " + card.name + ".", card.cost, this,
+			function()
+			{
+				// cost is handled by promptResourcePayment, so no need to do it here
+				this.removeFromHand(card);
+				this.addToFields(card);
+				card.play();
+				events.trigger("resource", this);
+				return true;
+			},
+			this, true);
+	}
+	else
+	{
+		events.trigger("log", "Not enough resources to play " + card.name);
+	}
 }
 
 Player.prototype.attack = function(attacker, target){
@@ -170,7 +204,7 @@ Player.prototype.gainLife = function(amount){
 }
 
 Player.prototype.toString = function() {
-    return "HAND: \n" + this.hand.join("\n") + "\nFIELD: \n" + this.creatures.join("\n") + "\nPoints: " + this.points + "\tPower: " + this.power;
+    return "HAND: \n" + this.hand.join("\n") + "\nCREATURES: \n" + this.creatures.join("\n") + "\nPoints: " + this.points + "\tPower: " + this.power;
 }
 
 //Packs up a bunch of stats about the player so that they can update the display or be sent to the other player.
@@ -191,5 +225,12 @@ Player.prototype.getStats = function() {
 Player.prototype.creatureEvents = function(eventType) {
     var abilityList = [];
     this.creatures.forEach(function(creature) {abilityList.push(creature.handleEvent(eventType));});
+    GAME.sequentialAbilityTriggers(abilityList);
+}
+
+//Triggers all the effects for a certain phase/event.  Has to be managed by the player rather than each individual field to ensure correct order.
+Player.prototype.fieldEvents = function(eventType) {
+    var abilityList = [];
+    this.fields.forEach(function(field) {abilityList.push(field.handleEvent(eventType));});
     GAME.sequentialAbilityTriggers(abilityList);
 }

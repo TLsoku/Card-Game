@@ -9,14 +9,15 @@ socket.on('turn', function(data) {
 
 socket.on('stats', function(data) {Display.updatePlayerStats(data);});
 
-socket.on('addToField', function(card, id) {
+socket.on('addToBoard', function(card, id) {
     var card = CardUtils.createCard(card, id);
     card.controller = GAME.players[1];
-    Display.addToField(card, false);
+    Display.addToBoard(card, false);
 });
 
 socket.on('event', function(type){
     GAME.players[0].creatureEvents(type);
+	GAME.players[0].fieldEvents(type);
 });
 
 socket.on('died', function(id){
@@ -70,10 +71,10 @@ function statsChanged(stats){
     socket.emit('stats', stats);
 }
 
-//Sends a signal to other player to update the field when new cards appear on it
+//Sends a signal to other player to update the board when new cards appear on it
 events.on('newCard', function(e, card) {
-    Display.addToField(card, true);
-    socket.emit('addToField', card.name, card.id);
+    Display.addToBoard(card, true);
+    socket.emit('addToBoard', card.name, card.id);
 });
 
 //A bunch of events to update stats, separated by type in case they should be different later
@@ -87,6 +88,7 @@ events.on('deck', function(e, player) {statsChanged(player.getStats());});
 //  you control.  Your creature abilities trigger before your opponent's.
 events.on('event', function(e, type) {
     GAME.players[0].creatureEvents(type);
+	GAME.players[0].fieldEvents(type);
     socket.emit("event", type);
 })
 
@@ -137,6 +139,7 @@ var Display = {
 
 
                     else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card.id);
+					else if (card instanceof Field) playedSuccess = card.owner.playField(card.id);
                     else playedSuccess = card.owner.playSpell(card.id);
                     if (playedSuccess) t.removeFromHand(this);
                 })
@@ -149,10 +152,10 @@ var Display = {
         $(div).remove();
         this.positionThumbnails($("#gameScreen .hand"));
     },
-    addToField: function(card, player){
+    addToBoard: function(card, player){
         //Pass in a card and either true(player's side) or false(opponent's side)
         t = this;
-        var $placement = $("#gameScreen .field." + (player ? "player" : "opponent")); //Div where the card should be placed
+        var $placement = $("#gameScreen .board." + (player ? "player" : "opponent")); //Div where the card should be placed
         (card.div = this.thumbnail.clone(true)).appendTo($placement).data(card)
             .find("img").attr("src", card.image);
         if (player) { //You can only use your own creatures to attack or use abilities
@@ -160,14 +163,19 @@ var Display = {
                if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
-        this.updateCreatureStats(card);
+		
+		// if it's a Creature card, show stats
+		if (card instanceof Creature)
+		{
+			this.updateCreatureStats(card);
+		}
         this.positionThumbnails($placement);
     },
-    removeFromField: function(card){
-        //Removes a card from the field
+    removeFromBoard: function(card){
+        //Removes a card from the board
         card.div.remove();
-        this.positionThumbnails($("#gameScreen .field.opponent"));
-        this.positionThumbnails($("#gameScreen .field.player"));
+        this.positionThumbnails($("#gameScreen .board.opponent"));
+        this.positionThumbnails($("#gameScreen .board.player"));
     },
     showDetails: function(card) {
         //Pass in nothing to hide the details that are currently displaying
@@ -189,12 +197,12 @@ var Display = {
     },
     // Valid targets: A list of the IDs of all cards which should get the targetting highlight
     showTargetting: function(validTargets){
-        $(".field .thumbnail").each(function(){
+        $(".board .thumbnail").each(function(){
             var $this = $(this);
             if (_.contains(validTargets, $this.data().id))
                 $this.toggleClass("glow", true).on("click.target", function(){
                     events.trigger("target", $this.data().id);
-                    $(".field .thumbnail").toggleClass("glow", false).off("click.target");
+                    $(".board .thumbnail").toggleClass("glow", false).off("click.target");
                 });
             });
     },
@@ -280,12 +288,13 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         }
     })(),
 
-    // Makes a prompt to pay resources for an ability (points and power), has 5 arguments
+    // Makes a prompt to pay resources for an ability (points and power), has 6 arguments
     // First is the text for the prompt
     // Second is the cost of the ability
     // Third is the player who is paying for the ability
     // Fourth is a function that will be called if the payment is completed
     // Fifth is the context (value of this) within the called function.
+	// Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
     promptResourcePayment: (function() {
 
         var $paymentBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
@@ -304,7 +313,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
 
         $paymentBox.append($paymentText).append($paymentRow).append($buttonsRow);
 
-        return function(text, cost, player, effect, context) {
+        return function(text, cost, player, effect, context, purity) {
 
             $("#shader").css("display", "block");
             $paymentText.html(text);
@@ -312,13 +321,18 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             $confirmButton.click(function() {
                     var pointsPaid = parseInt($payPoints.val(), 10);
                     var powerPaid = parseInt($payPower.val(),10);
-                    if (pointsPaid <= player.points && pointsPaid  >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
-                        player.points -= pointsPaid;
-                        player.power -= powerPaid;
-                        effect.call(context);
-                        $("#shader").css("display", "none");
-                        $paymentBox.remove();
-                        events.trigger("madeChoice")
+                    if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
+					
+						// purity check
+						if (!purity || pointsPaid == cost || powerPaid == cost)
+						{
+							player.points -= pointsPaid;
+							player.power -= powerPaid;
+							effect.call(context);
+							$("#shader").css("display", "none");
+							$paymentBox.remove();
+							events.trigger("madeChoice")
+						}
                     }
             });
 
@@ -391,5 +405,3 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
 }
 Display.init();
 GAME.init();
-
-
