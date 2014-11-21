@@ -135,7 +135,7 @@ var Display = {
                     //Play as an essence
                     if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card.id);
                     else if (e.altKey) playedSuccess = card.owner.playAsPower(card.id);
-                    //Should be replaced with buttons at some point
+                    //TODO: Playing essences should be done with drag and click
 
 
                     else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card.id);
@@ -213,11 +213,15 @@ var Display = {
         for (key in stats)
             statContainer.append($("<p>" + key + ":  " + stats[key] + "</p>"));
     },
+    // Updates the display of a  creature's stats, call whenever stats change
     updateCreatureStats: function(card){
+        // TODO: Display creature stats in a nice format instead of just text on the card
         card.div.find("span").html(card.atk + " -- " + card.HP + "/" + card.maxHP);
     }
 }
 
+// GAME stores information about the game and utility functions for making stuff work
+//  such as chooseTargets, promptResourcePayment, etc
 var GAME = {
     cards: [],
     players: [],
@@ -228,39 +232,51 @@ var GAME = {
            location.href = '../deckbuilder/deck.html';
         }
 
+// TODO: Remove these instructions once playing essences is improved
 events.trigger("log", "Use ctrl+click to play as a point essence.");
-events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remove
+events.trigger("log", "Use alt+click to play as a power essence.");
 
         var storedDeck = JSON.parse(localStorage['My deck']);
 
-        //Create a card object for each thing in the deck
+        // Create a card object for each thing in the deck
         var deck = [];
         for (name in storedDeck)
             for (var i = 0; i < storedDeck[name]; i++)
                 deck.push(CardUtils.createCard(name));
-
+        
+        // Sets up initial values for yourself (hand, resources)
         this.players.push(new Player(deck));
         this.players[0].points = 0;
         this.players[0].power = 0;
         this.players[0].draw(7);
 
+        // Add a second player (opponent) but don't give him any stats yet
         this.players.push(new Player());
     },
-    chooseTarget: function(callback, validTargets, context) { //Prompts the player to choose a target, then calls the callback function on the chosen target
+
+    // Prompt the player to choose a target and call the callback function on the chosen target
+    // callback is the function to call, will be passed the target as a parameter
+    // validTargets is an array of cards which can be targetted
+    // context will be the value of "this" in the callback function
+    chooseTarget: function(callback, validTargets, context) { 
         if (!validTargets) return; // No targets = no prompt or highlighting.
         events.trigger("log", "choose a target");
         Display.showTargetting(validTargets);
+
+        // Clicking a possible target triggers the "target" event, which is bound
+        //  here with "events.one" so that the following lines happen only once
         events.one("target", function(event, id) {
             var target = GAME.getCardByID(id);
             callback.call(context,target);
             events.trigger("log", "Targetted " + target);
         });
     },
+
+    //Makes a choice prompt box, has 3 arguments.
+    //First is the text for the prompt
+    //Second is an array of functions where the key is what is displayed on the button
+    //Third is the context (this) for the called function
     promptChoice: (function() {
-        //Makes a choice prompt box, has 3 arguments.
-        //First is the text for the prompt
-        //Second is an array of functions where the key is what is displayed on the button
-        //Third is the context (this) for the called function
         var $choiceBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $choiceText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $buttonsRow = $("<div style='border:none; position:absolute; top:60%; width: 100%; text-align:center;'></div>");
@@ -294,7 +310,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
     // Third is the player who is paying for the ability
     // Fourth is a function that will be called if the payment is completed
     // Fifth is the context (value of this) within the called function.
-	// Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
+    // Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
     promptResourcePayment: (function() {
 
         var $paymentBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
@@ -308,7 +324,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         var $cancelButton = $("<button> Cancel </button>");
 
         $paymentRow.append(($("<span>Point amount:</span>")).append($payPoints));
-        $paymentRow.append(($("<span>  Power amount:</span>")).append($payPower));
+        $paymentRow.append(($("<span>Power amount:</span>")).append($payPower));
         $buttonsRow.append($confirmButton).append($cancelButton);
 
         $paymentBox.append($paymentText).append($paymentRow).append($buttonsRow);
