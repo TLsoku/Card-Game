@@ -17,7 +17,7 @@ socket.on('addToBoard', function(card, id) {
 
 socket.on('event', function(type){
     GAME.players[0].creatureEvents(type);
-	GAME.players[0].fieldEvents(type);
+    GAME.players[0].fieldEvents(type);
 });
 
 socket.on('died', function(id){
@@ -88,7 +88,7 @@ events.on('deck', function(e, player) {statsChanged(player.getStats());});
 //  you control.  Your creature abilities trigger before your opponent's.
 events.on('event', function(e, type) {
     GAME.players[0].creatureEvents(type);
-	GAME.players[0].fieldEvents(type);
+    GAME.players[0].fieldEvents(type);
     socket.emit("event", type);
 })
 
@@ -122,6 +122,9 @@ var Display = {
         this.thumbnail = thumb;
         $("<button> End turn </button>").appendTo($('.menubuttons')).click(endTurn);
     },
+
+    // Adds the visual for a card to your hand, and sets up click handlers for it
+    // TODO: Click handlers in a separate function rather than inline?
     addToHand: function(card){
         var t = this;
         var i = new Image();
@@ -137,9 +140,8 @@ var Display = {
                     else if (e.altKey) playedSuccess = card.owner.playAsPower(card.id);
                     //TODO: Playing essences should be done with drag and click
 
-
                     else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card.id);
-					else if (card instanceof Field) playedSuccess = card.owner.playField(card.id);
+                    else if (card instanceof Field) playedSuccess = card.owner.playField(card.id);
                     else playedSuccess = card.owner.playSpell(card.id);
                     if (playedSuccess) t.removeFromHand(this);
                 })
@@ -147,13 +149,16 @@ var Display = {
             t.positionThumbnails($("#gameScreen .hand"));
         };
     },
+
+    // Removes the visual for a card from your hand, passing in a div.  Doesn't have to be a card, since you remove by clicking something
     removeFromHand: function(div){
-        //Removes a card from your hand, passing in a div.  Doesn't have to be a card, since you remove by clicking something
         $(div).remove();
         this.positionThumbnails($("#gameScreen .hand"));
     },
+
+    // Pass in a card and either true(player's side) or false(opponent's side) to
+    //  put the card onto that player's field
     addToBoard: function(card, player){
-        //Pass in a card and either true(player's side) or false(opponent's side)
         t = this;
         var $placement = $("#gameScreen .board." + (player ? "player" : "opponent")); //Div where the card should be placed
         (card.div = this.thumbnail.clone(true)).appendTo($placement).data(card)
@@ -163,38 +168,50 @@ var Display = {
                if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
-		
-		// if it's a Creature card, show stats
-		if (card instanceof Creature)
-		{
-			this.updateCreatureStats(card);
-		}
+        
+        // if it's a Creature card, show stats
+        if (card instanceof Creature)
+        {
+            this.updateCreatureStats(card);
+        }
         this.positionThumbnails($placement);
     },
+
+    // Removes the visual for a card from the board
+    // TODO: Why does this take a card, while removeFromHand takes a div?
     removeFromBoard: function(card){
-        //Removes a card from the board
         card.div.remove();
         this.positionThumbnails($("#gameScreen .board.opponent"));
         this.positionThumbnails($("#gameScreen .board.player"));
     },
-    showDetails: function(card) {
-        //Pass in nothing to hide the details that are currently displaying
 
+    // Shows details about a card (eg: large version of the card displayed as a sort of pop up)
+    //Pass in nothing to hide the details that are currently displaying
+    showDetails: function(card) {
+
+    // TODO: Maybe give details a class rather than directly manipulating css
         if (card == undefined){
-         this.details.css("display", "none");
-         return;
+            this.details.css("display", "none");
+            return;
         }
+
         this.details.find("img").attr("src", card.image);
         this.details.find(".title").html(card.name);
         this.details.find(".description").html(card.text);
         this.details.css("display", "block");
     },
+
+    // Arranges cards in a div to prevent holes.
+    // Pass in a div or the jquery selection of a div to position its children
     positionThumbnails: function($div){
-        //Arranges cards in a div to prevent holes.
+        if (!($div instanceof jQuery)) $div = $($div);
+
         $div.children("div").each(function(index){
             $(this).css("left", (index*10) + "%");
         });
     },
+
+    // Highlights cards for targetting and binds a target event to them
     // Valid targets: A list of the IDs of all cards which should get the targetting highlight
     showTargetting: function(validTargets){
         $(".board .thumbnail").each(function(){
@@ -206,6 +223,9 @@ var Display = {
                 });
             });
     },
+
+    // Updates the display of a player's stats
+    // TODO: Change to match more visual stat display (once that's done)
     updatePlayerStats: function(stats){
         var statContainer;
         if (stats.player == 'you') statContainer = $(".stats.player").html('');
@@ -213,15 +233,19 @@ var Display = {
         for (key in stats)
             statContainer.append($("<p>" + key + ":  " + stats[key] + "</p>"));
     },
+
     // Updates the display of a  creature's stats, call whenever stats change
+    // TODO: Display creature stats in a nice format instead of just text on the card
     updateCreatureStats: function(card){
-        // TODO: Display creature stats in a nice format instead of just text on the card
         card.div.find("span").html(card.atk + " -- " + card.HP + "/" + card.maxHP);
     }
 }
 
-// GAME stores information about the game and utility functions for making stuff work
-//  such as chooseTargets, promptResourcePayment, etc
+
+
+
+//------------- The GAME object, stores general data (players, cards) and provides game related utility ----
+
 var GAME = {
     cards: [],
     players: [],
@@ -232,9 +256,9 @@ var GAME = {
            location.href = '../deckbuilder/deck.html';
         }
 
-// TODO: Remove these instructions once playing essences is improved
-events.trigger("log", "Use ctrl+click to play as a point essence.");
-events.trigger("log", "Use alt+click to play as a power essence.");
+        // TODO: Remove these instructions once playing essences is improved
+        events.trigger("log", "Use ctrl+click to play as a point essence.");
+        events.trigger("log", "Use alt+click to play as a power essence.");
 
         var storedDeck = JSON.parse(localStorage['My deck']);
 
@@ -277,6 +301,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");
     //Second is an array of functions where the key is what is displayed on the button
     //Third is the context (this) for the called function
     promptChoice: (function() {
+        // TODO: CSS should be separated from these choice boxes instead of inline
         var $choiceBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $choiceText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $buttonsRow = $("<div style='border:none; position:absolute; top:60%; width: 100%; text-align:center;'></div>");
@@ -313,6 +338,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");
     // Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
     promptResourcePayment: (function() {
 
+        // TODO: CSS should be separated from these choice boxes instead of inline
         var $paymentBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $paymentText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $paymentRow = $("<div style='border:none; position:absolute; top:50%; width: 100%; text-align:center;'></div>");
@@ -335,27 +361,27 @@ events.trigger("log", "Use alt+click to play as a power essence.");
             $paymentText.html(text);
 
             $confirmButton.click(function() {
-                    var pointsPaid = parseInt($payPoints.val(), 10);
-                    var powerPaid = parseInt($payPower.val(),10);
-                    if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
-					
-						// purity check
-						if (!purity || pointsPaid == cost || powerPaid == cost)
-						{
-							player.points -= pointsPaid;
-							player.power -= powerPaid;
-							effect.call(context);
-							$("#shader").css("display", "none");
-							$paymentBox.remove();
-							events.trigger("madeChoice")
-						}
+                var pointsPaid = parseInt($payPoints.val(), 10);
+                var powerPaid = parseInt($payPower.val(),10);
+                if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
+                    
+                    // purity check
+                    if (!purity || pointsPaid == cost || powerPaid == cost)
+                    {
+                        player.points -= pointsPaid;
+                        player.power -= powerPaid;
+                        effect.call(context);
+                        $("#shader").css("display", "none");
+                        $paymentBox.remove();
+                        events.trigger("madeChoice");
                     }
+                }
             });
 
             $cancelButton.click(function() {
-                        $("#shader").css("display", "none");
-                        $paymentBox.remove();
-                        events.trigger("madeChoice")
+                $("#shader").css("display", "none");
+                $paymentBox.remove();
+                events.trigger("madeChoice")
             });
 
             $("body").append($paymentBox);
@@ -389,6 +415,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");
             ability(abilities[0],after[0], false);
         }
     })(),
+
     // Pass in an ID number for a card (each card gets a unique one), get back the card itself.  Simple.
     getCardByID: function(id){
         var foundCard = _.find(this.cards, function(c){return c.id == id;});
@@ -396,6 +423,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");
         events.trigger("log", "Card with id " + id + " was not found.");
         return false;
     },
+
     //Pass in a collection of cards (all, hand, creatures, etc) and a function that
     //      returns true for cards which should be targetable and false for ones that should not
     //      Alternatively, don't pass any function to find all the passed-in cards
@@ -406,18 +434,25 @@ events.trigger("log", "Use alt+click to play as a power essence.");
         return _.pluck(_.filter(cards, f), "id");
     },
 
-    //Some premade findTargets calls for common usage
+    //------Some premade findTargets calls for common usage
+
+    // Finds creatures you don't control
     findOppCreature: function(){
         return this.findTargets(this.cards, function(c) {return c.controller == GAME.players[1];});
     },
+
+    // Finds creatures you control that are capable of intercepting
     findInterceptor: function(){
         return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
     },
+
+    // Finds creatures, can pass in a function to filter further
     findCreature: function(f){
         if (f)
             return this.findTargets(this.cards, function(c) {return c instanceof Creature && f(c);});
         return this.findTargets(this.cards, function(c) {return c instanceof Creature;});
     }
 }
+
 Display.init();
 GAME.init();

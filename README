@@ -1,14 +1,29 @@
-The first REAL commit to the card game dev.
-
-Contains:
-- A very basic multiplayer demo lacking many game features, using the deck you made in the deck builder
-- A deckbuilder that allows you to build decks, saving them locally and sending a copy to the server to save if the deck is valid
-- CardUtils.js, a collection of generic utility functions for dealing with cards
-- A chat page left as a relic from when this was a chat program.  It probably still works but will need tuning to serve as game chat
-- A few images, look in the images folder
-- An index page so that the other pages can be found by people
-- The server, server.js.  Needs to be running for chat or multiplayer, but deckbuilder should be fine without it. Requires nodejs to run.Navigate a cmd prompt to the directory it's in, and use the command:
-
-        node server.js <port to listen on>
-
-to start it.  Don't forget to port forward if you want others to see it.
+CardUtils.js:64:            // TODO: Are tokens always creatures? Seems like a bad assumption
+board/board.css:112:/*TODO: REMOVE*/
+board/board.js:127:    // TODO: Click handlers in a separate function rather than inline?
+board/board.js:141:                    //TODO: Playing essences should be done with drag and click
+board/board.js:181:    // TODO: Why does this take a card, while removeFromHand takes a div?
+board/board.js:192:    // TODO: Maybe give details a class rather than directly manipulating css
+board/board.js:228:    // TODO: Change to match more visual stat display (once that's done)
+board/board.js:238:    // TODO: Display creature stats in a nice format instead of just text on the card
+board/board.js:254:        if (!(localStorage['My deck'])) { //TODO: Let them load a deck of their choice
+board/board.js:259:        // TODO: Remove these instructions once playing essences is improved
+board/board.js:304:        // TODO: CSS should be separated from these choice boxes instead of inline
+board/board.js:341:        // TODO: CSS should be separated from these choice boxes instead of inline
+board/cardPrototype.js:27://TODO: Was considering adding triggers like this, but decided on another way to do it.  Still in here just in case I need to go back to this old way
+board/cardPrototype.js:48:    //TODO: Implement spells.  For now, TESTING: ALL SPELLS ARE A TEST SPELL
+board/player.js:31:            $(".menubuttons button").css("display", "block"); //TODO: A bit of display code in here, should probably get moved
+board/player.js:58:// TODO: Maybe this should return a card, and caller should decide what to do with it?  Makes it more flexible for where the drawn card ends up
+board/player.js:61:        if (this.deck.length == 0) {console.log("out of deck"); return;} //TODO: Something should happen when you deck out?
+board/player.js:75:// Removes a card from the player's hand.  TODO: Some sort of warning if the card was not in hand?
+board/player.js:80:// TODO: Playing as power/point essence could maybe be condensed into 2 functions instead of 4
+board/player.js:128:    //TODO: See if this can be safely removed (instead of just commented) card.addTriggers();
+board/player.js:143:// TODO: Maybe some state on the creature should be changed as well?
+board/player.js:152:// TODO: Generalize this to play creatures that aren't in your hand?  
+board/player.js:169:// TODO: Generalize this to play spells that aren't in your hand?  
+board/player.js:185:// TODO: Generalize this to play fields that aren't in your hand?  
+deckbuilder/deck.js:13:    // TODO: Add more sort types?
+deckbuilder/deck.js:27:    // TODO: Add more search types?
+deckbuilder/deck.js:57:    // TODO: Make some sort of "couldn't add card, only 4 allowed" notification
+deckbuilder/deck.js:143:    // TODO: Make it try to load from server as well?  Might need user accounts
+deckbuilder/deck.js:170:// TODO: Decide if we still need this functionality and/or reformat the export
