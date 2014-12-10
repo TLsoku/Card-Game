@@ -405,7 +405,7 @@ allCards = [{
     text: 'Creatures your opponent controls gain Poison 4 (Poisoned creatures lose health equal to their amount of poison at the end of each turn).\n            ',
 },{
     name: 'Nazrin',
-    image: 'http://i.imgur.com/74sR1JF.jpg',
+    image: '/art/nazrin.png',
     type: 'Creature',
     cost: 3,
     attack: 7,

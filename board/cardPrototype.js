@@ -5,8 +5,8 @@ function Card(original, id) { //Object to represent a card.  Pass in the origina
     this.cost = original.cost;
     this.text = original.text;
     this.image = original.image;
-	this.controller; //Variable to store the controller of the creature, only valid while it is in play
-	this.state = "";
+    this.controller; //Variable to store the controller of the card, only valid while it is in play
+    this.state = "";
 
     //Stores special functions related to the card, such as what happens on ETB, death, EoT, etc
     this.func = original.special || [];
@@ -19,11 +19,12 @@ function Card(original, id) { //Object to represent a card.  Pass in the origina
     GAME.cards.push(this);
 }
 
+// Placeholder for being able to concatenate cards with strings or console.log(card)
 Card.prototype.toString = function(){
     return "A card called " + this.name;
 }
 
-//Was considering adding triggers like this, but decided on another way to do it.  Still in here just in case I need to go back to this old way
+//TODO: Was considering adding triggers like this, but decided on another way to do it.  Still in here just in case I need to go back to this old way
 /*Card.prototype.addTriggers = function(){
     var t = this;
     for (ev in t.func)
@@ -44,7 +45,7 @@ function Spell(original){
     Card.call(this, original);
     //this.effect = original.effect;
 
-    //TESTING: ALL SPELLS ARE A TEST SPELL
+    //TODO: Implement spells.  For now, TESTING: ALL SPELLS ARE A TEST SPELL
     this.text = "Deal 20 damage to target creature.";
     this.effect = function() {GAME.chooseTarget(function(target) {this.dealDamage(target, 20);}, GAME.findCreature(), this);};
 }
@@ -73,7 +74,7 @@ function Field(original){
 Field.prototype = Object.create(Card.prototype);
 
 Field.prototype.play = function() {
-	this.state = "board";
+    this.state = "board";
     events.trigger("log", this.owner.name + " played a " + this.name);
     if (this.func["play"])
         this.func["play"].call(this);
@@ -93,8 +94,6 @@ Field.prototype.toString = function() {
     return this.name + ":  costs " + this.cost;
 }
 
-//
-//  Creature prototype
 //
 //  Creature prototype
 

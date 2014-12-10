@@ -1,13 +1,25 @@
 //------Sockets--------
 var socket = io.connect();
-socket.on('turn', function(data) {alert("your turn"); GAME.yourTurn = true; GAME.players[0].turn.start();});
+
+socket.on('turn', function(data) {
+    alert("your turn");
+    GAME.yourTurn = true;
+    GAME.players[0].turn.start();
+});
+
 socket.on('stats', function(data) {Display.updatePlayerStats(data);});
-socket.on('addToBoard', function(card, id) {var card = CardUtils.createCard(card, id);  card.controller = GAME.players[1];  Display.addToBoard(card, false);});
+
+socket.on('addToBoard', function(card, id) {
+    var card = CardUtils.createCard(card, id);
+    card.controller = GAME.players[1];
+    Display.addToBoard(card, false);
+});
 
 socket.on('event', function(type){
     GAME.players[0].creatureEvents(type);
-	GAME.players[0].fieldEvents(type);
+    GAME.players[0].fieldEvents(type);
 });
+
 socket.on('died', function(id){
     var card = GAME.getCardByID(id);
     card.controller.removeFromCreatures(card);
@@ -17,7 +29,7 @@ socket.on('attack', function(a, t){
     var attacker = GAME.getCardByID(a);
     var target = GAME.getCardByID(t);
     alert(attacker.name + " is attacking " + target.name);
-    
+
     GAME.chooseTarget(function(interceptor){
         if (interceptor == target){
             socket.emit('combat', {intercept: false, attackerID: attacker.id, targetID: target.id});
@@ -26,10 +38,10 @@ socket.on('attack', function(a, t){
         else {
             interceptor.intercept(attacker);
             socket.emit('combat', {intercept: true, attackerID: attacker.id, targetID: interceptor.id});
-        }        
+        }
         Display.updateCreatureStats(attacker);
         Display.updateCreatureStats(interceptor);
-    }, GAME.findInterceptor(), attacker); 
+    }, GAME.findInterceptor(), attacker);
 });
 
 socket.on('combat', function(data) {
@@ -48,7 +60,6 @@ function endTurn(){
     GAME.yourTurn = false;
     socket.emit('turn', 1);
 }
-
 
 
 //------Events----------
@@ -72,28 +83,36 @@ events.on('life', function(e, player) {statsChanged(player.getStats());});
 events.on('essence', function(e, player) {statsChanged(player.getStats());});
 events.on('deck', function(e, player) {statsChanged(player.getStats());});
 
-// Event that triggers on a variety of game events.  Will signal the other player it occured, as well as trigger the abilities
-// for that event for all creatures you control.  Your creature abilities trigger before your opponent's.
+// Event that triggers on a variety of game events.  Will signal the other player
+//  it occured, as well as trigger the abilities for that event for all creatures
+//  you control.  Your creature abilities trigger before your opponent's.
 events.on('event', function(e, type) {
     GAME.players[0].creatureEvents(type);
-	GAME.players[0].fieldEvents(type);
+    GAME.players[0].fieldEvents(type);
     socket.emit("event", type);
 })
 
 //Logging event, currently logs to console and chat
-events.on('log', function(e, message) {$("div.chat").append($("<p>"+message+"</p>")); console.log(message);});
+events.on('log', function(e, message) {
+    $("div.chat").append($("<p>"+message+"</p>"));
+     console.log(message);
+});
 
 //Attack event, sends attack signal to other player
 events.on('attack', function(e, attacker, target) {
    socket.emit("attack", attacker, target);
 });
+
 events.on('died', function(e, id) {
    socket.emit("died",id);
 });
 
-//------------- The Display, how things look on the screen and control of visual aspects ---------
+
+
+
+//------------- The Display, how things look on the screen and control of visual aspects ----
 var Display = {
-details: $("#gameScreen .detailed"),
+    details: $("#gameScreen .detailed"),
     thumbnail: null,
     init: function() {
         var t = this;
@@ -103,6 +122,9 @@ details: $("#gameScreen .detailed"),
         this.thumbnail = thumb;
         $("<button> End turn </button>").appendTo($('.menubuttons')).click(endTurn);
     },
+
+    // Adds the visual for a card to your hand, and sets up click handlers for it
+    // TODO: Click handlers in a separate function rather than inline?
     addToHand: function(card){
         var t = this;
         var i = new Image();
@@ -116,11 +138,10 @@ details: $("#gameScreen .detailed"),
                     //Play as an essence
                     if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card.id);
                     else if (e.altKey) playedSuccess = card.owner.playAsPower(card.id);
-                    //Should be replaced with buttons at some point
-
+                    //TODO: Playing essences should be done with drag and click
 
                     else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card.id);
-					else if (card instanceof Field) playedSuccess = card.owner.playField(card.id);
+                    else if (card instanceof Field) playedSuccess = card.owner.playField(card.id);
                     else playedSuccess = card.owner.playSpell(card.id);
                     if (playedSuccess) t.removeFromHand(this);
                 })
@@ -128,13 +149,16 @@ details: $("#gameScreen .detailed"),
             t.positionThumbnails($("#gameScreen .hand"));
         };
     },
+
+    // Removes the visual for a card from your hand, passing in a div.  Doesn't have to be a card, since you remove by clicking something
     removeFromHand: function(div){
-        //Removes a card from your hand, passing in a div.  Doesn't have to be a card, since you remove by clicking something
         $(div).remove();
         this.positionThumbnails($("#gameScreen .hand"));
     },
+
+    // Pass in a card and either true(player's side) or false(opponent's side) to
+    //  put the card onto that player's field
     addToBoard: function(card, player){
-        //Pass in a card and either true(player's side) or false(opponent's side)
         t = this;
         var $placement = $("#gameScreen .board." + (player ? "player" : "opponent")); //Div where the card should be placed
         (card.div = this.thumbnail.clone(true)).appendTo($placement).data(card)
@@ -144,38 +168,50 @@ details: $("#gameScreen .detailed"),
                if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
-		
-		// if it's a Creature card, show stats
-		if (card instanceof Creature)
-		{
-			this.updateCreatureStats(card);
-		}
+        
+        // if it's a Creature card, show stats
+        if (card instanceof Creature)
+        {
+            this.updateCreatureStats(card);
+        }
         this.positionThumbnails($placement);
     },
+
+    // Removes the visual for a card from the board
+    // TODO: Why does this take a card, while removeFromHand takes a div?
     removeFromBoard: function(card){
-        //Removes a card from the board
         card.div.remove();
         this.positionThumbnails($("#gameScreen .board.opponent"));
         this.positionThumbnails($("#gameScreen .board.player"));
     },
-    showDetails: function(card) {
-        //Pass in nothing to hide the details that are currently displaying
 
+    // Shows details about a card (eg: large version of the card displayed as a sort of pop up)
+    //Pass in nothing to hide the details that are currently displaying
+    showDetails: function(card) {
+
+    // TODO: Maybe give details a class rather than directly manipulating css
         if (card == undefined){
-         this.details.css("display", "none");
-         return;
+            this.details.css("display", "none");
+            return;
         }
+
         this.details.find("img").attr("src", card.image);
         this.details.find(".title").html(card.name);
         this.details.find(".description").html(card.text);
         this.details.css("display", "block");
     },
+
+    // Arranges cards in a div to prevent holes.
+    // Pass in a div or the jquery selection of a div to position its children
     positionThumbnails: function($div){
-        //Arranges cards in a div to prevent holes.
+        if (!($div instanceof jQuery)) $div = $($div);
+
         $div.children("div").each(function(index){
             $(this).css("left", (index*10) + "%");
         });
     },
+
+    // Highlights cards for targetting and binds a target event to them
     // Valid targets: A list of the IDs of all cards which should get the targetting highlight
     showTargetting: function(validTargets){
         $(".board .thumbnail").each(function(){
@@ -187,6 +223,9 @@ details: $("#gameScreen .detailed"),
                 });
             });
     },
+
+    // Updates the display of a player's stats
+    // TODO: Change to match more visual stat display (once that's done)
     updatePlayerStats: function(stats){
         var statContainer;
         if (stats.player == 'you') statContainer = $(".stats.player").html('');
@@ -194,10 +233,18 @@ details: $("#gameScreen .detailed"),
         for (key in stats)
             statContainer.append($("<p>" + key + ":  " + stats[key] + "</p>"));
     },
+
+    // Updates the display of a  creature's stats, call whenever stats change
+    // TODO: Display creature stats in a nice format instead of just text on the card
     updateCreatureStats: function(card){
         card.div.find("span").html(card.atk + " -- " + card.HP + "/" + card.maxHP);
     }
 }
+
+
+
+
+//------------- The GAME object, stores general data (players, cards) and provides game related utility ----
 
 var GAME = {
     cards: [],
@@ -209,39 +256,52 @@ var GAME = {
            location.href = '../deckbuilder/deck.html';
         }
 
-events.trigger("log", "Use ctrl+click to play as a point essence.");
-events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remove
+        // TODO: Remove these instructions once playing essences is improved
+        events.trigger("log", "Use ctrl+click to play as a point essence.");
+        events.trigger("log", "Use alt+click to play as a power essence.");
 
         var storedDeck = JSON.parse(localStorage['My deck']);
 
-        //Create a card object for each thing in the deck
+        // Create a card object for each thing in the deck
         var deck = [];
         for (name in storedDeck)
             for (var i = 0; i < storedDeck[name]; i++)
                 deck.push(CardUtils.createCard(name));
-
+        
+        // Sets up initial values for yourself (hand, resources)
         this.players.push(new Player(deck));
         this.players[0].points = 0;
         this.players[0].power = 0;
         this.players[0].draw(7);
 
+        // Add a second player (opponent) but don't give him any stats yet
         this.players.push(new Player());
     },
-    chooseTarget: function(callback, validTargets, context) { //Prompts the player to choose a target, then calls the callback function on the chosen target
+
+    // Prompt the player to choose a target and call the callback function on the chosen target
+    // callback is the function to call, will be passed the target as a parameter
+    // validTargets is an array of cards which can be targetted
+    // context will be the value of "this" in the callback function
+    chooseTarget: function(callback, validTargets, context) { 
         if (!validTargets) return; // No targets = no prompt or highlighting.
         events.trigger("log", "choose a target");
         Display.showTargetting(validTargets);
+
+        // Clicking a possible target triggers the "target" event, which is bound
+        //  here with "events.one" so that the following lines happen only once
         events.one("target", function(event, id) {
             var target = GAME.getCardByID(id);
             callback.call(context,target);
             events.trigger("log", "Targetted " + target);
         });
     },
+
+    //Makes a choice prompt box, has 3 arguments.
+    //First is the text for the prompt
+    //Second is an array of functions where the key is what is displayed on the button
+    //Third is the context (this) for the called function
     promptChoice: (function() {
-        //Makes a choice prompt box, has 3 arguments.
-        //First is the text for the prompt
-        //Second is an array of functions where the key is what is displayed on the button
-        //Third is the context (this) for the called function
+        // TODO: CSS should be separated from these choice boxes instead of inline
         var $choiceBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $choiceText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $buttonsRow = $("<div style='border:none; position:absolute; top:60%; width: 100%; text-align:center;'></div>");
@@ -275,9 +335,10 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
     // Third is the player who is paying for the ability
     // Fourth is a function that will be called if the payment is completed
     // Fifth is the context (value of this) within the called function.
-	// Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
+    // Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
     promptResourcePayment: (function() {
 
+        // TODO: CSS should be separated from these choice boxes instead of inline
         var $paymentBox = $("<div style='background-color: white; border: thick solid black; position: absolute; left:35%; top: 30%; width: 30%; height: 20%; z-index:10'> </div>");
         var $paymentText = $("<div style='border: none; position:absolute; left:25%; top:35%;'> Here is the choice text </div>");
         var $paymentRow = $("<div style='border:none; position:absolute; top:50%; width: 100%; text-align:center;'></div>");
@@ -289,7 +350,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         var $cancelButton = $("<button> Cancel </button>");
 
         $paymentRow.append(($("<span>Point amount:</span>")).append($payPoints));
-        $paymentRow.append(($("<span>  Power amount:</span>")).append($payPower));
+        $paymentRow.append(($("<span>Power amount:</span>")).append($payPower));
         $buttonsRow.append($confirmButton).append($cancelButton);
 
         $paymentBox.append($paymentText).append($paymentRow).append($buttonsRow);
@@ -300,27 +361,27 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             $paymentText.html(text);
 
             $confirmButton.click(function() {
-                    var pointsPaid = parseInt($payPoints.val(), 10);
-                    var powerPaid = parseInt($payPower.val(),10);
-                    if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
-					
-						// purity check
-						if (!purity || pointsPaid == cost || powerPaid == cost)
-						{
-							player.points -= pointsPaid;
-							player.power -= powerPaid;
-							effect.call(context);
-							$("#shader").css("display", "none");
-							$paymentBox.remove();
-							events.trigger("madeChoice")
-						}
+                var pointsPaid = parseInt($payPoints.val(), 10);
+                var powerPaid = parseInt($payPower.val(),10);
+                if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
+                    
+                    // purity check
+                    if (!purity || pointsPaid == cost || powerPaid == cost)
+                    {
+                        player.points -= pointsPaid;
+                        player.power -= powerPaid;
+                        effect.call(context);
+                        $("#shader").css("display", "none");
+                        $paymentBox.remove();
+                        events.trigger("madeChoice");
                     }
+                }
             });
 
             $cancelButton.click(function() {
-                        $("#shader").css("display", "none");
-                        $paymentBox.remove();
-                        events.trigger("madeChoice")
+                $("#shader").css("display", "none");
+                $paymentBox.remove();
+                events.trigger("madeChoice")
             });
 
             $("body").append($paymentBox);
@@ -354,6 +415,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
             ability(abilities[0],after[0], false);
         }
     })(),
+
     // Pass in an ID number for a card (each card gets a unique one), get back the card itself.  Simple.
     getCardByID: function(id){
         var foundCard = _.find(this.cards, function(c){return c.id == id;});
@@ -361,6 +423,7 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         events.trigger("log", "Card with id " + id + " was not found.");
         return false;
     },
+
     //Pass in a collection of cards (all, hand, creatures, etc) and a function that
     //      returns true for cards which should be targetable and false for ones that should not
     //      Alternatively, don't pass any function to find all the passed-in cards
@@ -371,18 +434,25 @@ events.trigger("log", "Use alt+click to play as a power essence.");//TODO: remov
         return _.pluck(_.filter(cards, f), "id");
     },
 
-    //Some premade findTargets calls for common usage
+    //------Some premade findTargets calls for common usage
+
+    // Finds creatures you don't control
     findOppCreature: function(){
         return this.findTargets(this.cards, function(c) {return c.controller == GAME.players[1];});
     },
+
+    // Finds creatures you control that are capable of intercepting
     findInterceptor: function(){
         return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
     },
+
+    // Finds creatures, can pass in a function to filter further
     findCreature: function(f){
-        if (f) 
+        if (f)
             return this.findTargets(this.cards, function(c) {return c instanceof Creature && f(c);});
         return this.findTargets(this.cards, function(c) {return c instanceof Creature;});
     }
 }
+
 Display.init();
 GAME.init();
