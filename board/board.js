@@ -10,6 +10,7 @@ socket.on('turn', function(data) {
 socket.on('stats', function(data) {Display.updatePlayerStats(data);});
 
 socket.on('addToBoard', function(card, id) {
+    console.log(card + " -- " + id);
     var card = CardUtils.createCard(card, id);
     card.controller = GAME.players[1];
     Display.addToBoard(card, false);
@@ -74,6 +75,7 @@ function statsChanged(stats){
 //Sends a signal to other player to update the board when new cards appear on it
 events.on('newCard', function(e, card) {
     Display.addToBoard(card, true);
+    console.log(card.name + "  -- " + card.id);
     socket.emit('addToBoard', card.name, card.id);
 });
 
@@ -134,16 +136,15 @@ var Display = {
                 .click(function(e) {
                     if (!card.owner.turn.active) return false;
                     var playedSuccess = false;
-
+                    card.clickInHand();
+/*
                     //Play as an essence
                     if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card.id);
                     else if (e.altKey) playedSuccess = card.owner.playAsPower(card.id);
                     //TODO: Playing essences should be done with drag and click
-
-                    else if (card instanceof Creature) playedSuccess = card.owner.playCreature(card.id);
-                    else if (card instanceof Field) playedSuccess = card.owner.playField(card.id);
-                    else playedSuccess = card.owner.playSpell(card.id);
-                    if (playedSuccess) t.removeFromHand(this);
+                    
+                    else playedSuccess = card.owner.playCard(card);
+  */                  if (playedSuccess) t.removeFromHand(this);
                 })
                 .find("img").attr("src", card.image);
             t.positionThumbnails($("#gameScreen .hand"));
@@ -424,6 +425,17 @@ var GAME = {
         return false;
     },
 
+    // Used to made a function run a single time when clicking something.  
+    // selector should be a jquery selector string for what should be clicked (e.g. '#board' or '.stats')
+    // action should be a function which is called on click.  It takes no parameters.
+    // It will glow until clicked, and then clicking will disable ALL glowing elements
+    addSingleClick: function(selector, action){
+        $(selector).toggleClass("glow", true).on("click.singleClick", function(){
+            action();
+            $(".glow").toggleClass("glow", false).off("click.singleClick");
+        });
+    },
+
     //Pass in a collection of cards (all, hand, creatures, etc) and a function that
     //      returns true for cards which should be targetable and false for ones that should not
     //      Alternatively, don't pass any function to find all the passed-in cards
@@ -451,7 +463,7 @@ var GAME = {
         if (f)
             return this.findTargets(this.cards, function(c) {return c instanceof Creature && f(c);});
         return this.findTargets(this.cards, function(c) {return c instanceof Creature;});
-    }
+    },
 }
 
 Display.init();

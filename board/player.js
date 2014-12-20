@@ -41,7 +41,7 @@ function Player(deck, name) {
 //  Points and power increased by number of essences
 //  Creatures intercept and attack count is reset to 0
 //  Trigger an event to trigger upkeep effects on your cards and opponent's stuff
-//  Draw a card, update stats by triggering resource change
+//  Draw a card, update stats by triggering essence change
 Player.prototype.upkeep = function(){
     this.points += this.pointEssences.length;
     this.power += this.powerEssences.length;
@@ -79,10 +79,20 @@ Player.prototype.removeFromHand = function(card) {  //Removes the specified card
 
 // TODO: Playing as power/point essence could maybe be condensed into 2 functions instead of 4
 
+// Returns true/false depending on whether the player can play something as a point essence
+Player.prototype.canPlayPoint = function(){
+    return this.playedPoints == 0;
+}
 
-// Plays a card as a point resource.  Note: Refers to actually playing the card from your hand
+// Returns true/false depending on whether the player can play something as a power essence
+Player.prototype.canPlayPower = function(){
+    return this.playedPower == 0;
+}
+
+// Plays a card as a point essence.  Note: Refers to actually playing the card from your hand
 Player.prototype.playAsPoint = function(id) {
-    if (this.playedPoints) return false; //Can only play one point resource per turn
+    if (!(this.canPlayPoint())) return false;
+
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     this.playedPoints = true;
@@ -90,8 +100,8 @@ Player.prototype.playAsPoint = function(id) {
     return true;
 }
 
-// Puts a card onto the board as a point resource.  NOTE: Not the same as playing a point resource from hand.
-// Playing a point resource from hand will use this, but also cards like Kanako.
+// Puts a card onto the board as a point essence.  NOTE: Not the same as playing a point essence from hand.
+// Playing a point essence from hand will use this, but also cards like Kanako.
 Player.prototype.addPointToBoard = function(card){
     card.state = "land";
     this.pointEssences.push(card);
@@ -99,9 +109,10 @@ Player.prototype.addPointToBoard = function(card){
 }
 
 
-// Plays a card as a power resource.  Note: Refers to actually playing the card from your hand
+// Plays a card as a power essence.  Note: Refers to actually playing the card from your hand
 Player.prototype.playAsPower = function(id) {
-    if (this.playedPower) return false;
+    if (!(this.canPlayPower())) return false;
+
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     this.playedPower = true;
@@ -109,7 +120,7 @@ Player.prototype.playAsPower = function(id) {
     return true;
 }
 
-//Puts a card onto the board as a power resource.  NOTE: Not the same as playing a power resource from hand.
+//Puts a card onto the board as a power essence.  NOTE: Not the same as playing a power essence from hand.
 Player.prototype.addPowerToBoard = function(card){
     card.state = "land";
     this.powerEssences.push(card);
@@ -145,6 +156,17 @@ Player.prototype.removeFromCreatures = function(card) {
     this.creatures = _.without(this.creatures, card);
     Display.removeFromBoard(card);
     //card.removeTriggers();
+}
+
+// General purpose function for playing a card, redirects to the apppropriate play function
+Player.prototype.playCard = function(card) {
+
+    if (card instanceof Creature) return this.playCreature(card.id);
+    if (card instanceof Field) return this.playField(card.id);
+    if (card instanceof Spell) return this.playSpell(card.id);
+
+    events.trigger("log", (typeof card) + " is not a valid card type and cannot be played.");
+    return false;
 }
 
 // Play a creature.  Removes the creature from your hand and adds it to creatures,
