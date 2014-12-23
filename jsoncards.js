@@ -597,7 +597,7 @@ allCards = [{
     text: 'Unzan cannot attack the turn he enters the battlefield.\n            After combat, Unzan cannot attack or intercept until the end of the next turn.',
 },{
     name: 'Utsuho',
-    image: 'http://i.imgur.com/nmjKIpr.jpg',
+    image: '/art/utsuho.png',
     type: 'Creature',
     cost: 5,
     attack: 15,
