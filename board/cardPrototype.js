@@ -45,9 +45,14 @@ function Spell(original){
     Card.call(this, original);
     //this.effect = original.effect;
 
-    //TODO: Implement spells.  For now, TESTING: ALL SPELLS ARE A TEST SPELL
+    //TODO: Implement spells.  For now, TESTING: MOST SPELLS ARE A TEST SPELL
     this.text = "Deal 20 damage to target creature.";
     this.effect = function() {GAME.chooseTarget(function(target) {this.dealDamage(target, 20);}, GAME.findCreature(), this);};
+    
+    if (original.text) this.text = original.text;
+    if (original.effect) {
+        this.effect = original.effect;
+    }
 }
 
 Spell.prototype = Object.create(Card.prototype);
@@ -58,7 +63,9 @@ Spell.prototype.play = function() {
 }
 
 Spell.prototype.dealDamage = function(target, amount) {
-    target.takeDamage(amount);
+    if (target instanceof Creature) {
+        target.takeDamage(GAME.damageFromSpell(amount));
+    }
 }
 
 //
@@ -110,29 +117,58 @@ function Creature(original, id) { //Object to represent a single Creature in the
     this.HP = original.defense;
     this.atk = original.attack;
     this.attackCount = 0; //How many times the creature has attacked this turn.  Resets every turn.
+    this.maxAttacks = 1;
     this.intercepts = 0;
     this.maxIntercepts = 1;
+    this.interceptDamageRate = 0.5;
+    
+    if (original.takeDamage) this.takeDamage = original.takeDamage;
+    if (original.onCreatureDamage) this.onCreatureDamage = original.onCreatureDamage;
+    if (original.maxIntercepts) this.maxIntercepts = original.maxIntercepts;
+    if (original.interceptDamageRate) this.interceptDamageRate = original.interceptDamageRate;
 }
 
 Creature.prototype = Object.create(Card.prototype); //Inheriting line
 
 Creature.prototype.fight = function(opp) {
+    // Sometimes, taking damage affects the creatures' attack.
+    // Example: "Whenever this creature is dealt damage, it gets +5/+0."
+    // Since both creatures are supposed to deal damage at the same time,
+    // save their old attack value
+    var currentAttack = this.atk;
+    var oppAttack = opp.atk;
+    
     events.trigger("log", this.name + " and " + opp.name + " fight!");
-    this.takeDamage(opp.atk);
-    opp.takeDamage(this.atk);
+    
+    this.takeDamage(GAME.damageFromCreature(oppAttack));
+    opp.takeDamage(GAME.damageFromCreature(currentAttack));
 }
 
 Creature.prototype.intercept = function(opp) {
+    // Sometimes, taking damage affects the creatures' attack.
+    // Example: "Whenever this creature is dealt damage, it gets +5/+0."
+    // Since both creatures are supposed to deal damage at the same time,
+    // save their old attack value
+    var currentAttack = this.atk;
+    var oppAttack = opp.atk;
+    
     events.trigger("log", this.name + " intercepts " + opp.name + "!");
     this.intercepts += 1;
-    this.takeDamage(opp.atk);
-    opp.takeDamage(Math.floor(this.atk/2));
+    
+    this.takeDamage(GAME.damageFromCreature(oppAttack));
+    opp.takeDamage(Math.floor(GAME.damageFromCreature(currentAttack) * this.interceptDamageRate));
 }
 
 Creature.prototype.takeDamage = function(amount) {
-    this.HP = this.HP - amount;
+    this.HP = this.HP - GAME.damageToCreature(amount);
     if (this.HP <= 0)
         this.die();
+    events.trigger("creatureDamage", this, GAME.damageToCreature(amount));
+}
+
+// this is blank, but each individual creature may have a special function
+// to call when ANY creature is damaged (which is used on creatureDamage event)
+Creature.prototype.onCreatureDamage = function(creatureDamaged, amount) {
 }
 
 Creature.prototype.die = function() {

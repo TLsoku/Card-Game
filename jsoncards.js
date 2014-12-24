@@ -34,6 +34,10 @@ allCards = [{
     type: 'Spell',
     cost: 2,
     text: 'Create two 0/15 Shield Doll tokens.',
+    effect: function() {
+        this.controller.addToCreatures(CardUtils.createCard("Shield Doll"));
+        this.controller.addToCreatures(CardUtils.createCard("Shield Doll"));
+    },
 },{
     name: 'Brilliant Dragon Bullet',
     image: 'http://i.imgur.com/P9wrlrE.jpg',
@@ -62,6 +66,8 @@ allCards = [{
     attack: 10,
     defense: 25,
     text: 'Chen can attack an additional time each turn.',
+    
+    maxAttacks: 2,
 },{
     name: 'Cirno',
     image: 'http://i.imgur.com/PdVb0tf.jpg',
@@ -116,6 +122,16 @@ allCards = [{
     attack: 18,
     defense: 45,
     text: 'At the end of your turn, creatures you control heal 10 health.\nWhenever a creature you control heals, that creature gets +2/+3.\n',
+    special: {
+        "end": function() {
+                    var DAMAGE_HEALED = 10;
+                    
+                    this.creatures.forEach(function (creature) {
+                                            creature.HP += DAMAGE_HEALED;
+                                            events.trigger("creatureHeal", creature, DAMAGE_HEALED);
+                                           });
+               }
+    }
 },{
     name: 'Evil Sealing Circle',
     image: 'http://i.imgur.com/fuduoi4.jpg',
@@ -156,6 +172,18 @@ allCards = [{
     type: 'Spell',
     cost: 4,
     text: 'If you have attacked this turn, you cannot play this spell.  You may not attack this turn.\n            Draw 2 cards.\n            ',
+    effect: function() {
+                var hasAttacked = false;
+                this.controller.creatures.forEach(function (creature) {
+                                                    if (creature.attackCount > 0) hasAttacked = true;
+                                                  });
+                if (hasAttacked == false) {
+                    this.controller.draw(2);
+                    this.controller.creatures.forEach(function (creature) {
+                                                        creature.attackCount = creature.maxAttacks;
+                                                      });
+                }
+           },
 },{
     name: 'Geyser Eruption',
     image: 'http://i.imgur.com/1vCquDn.jpg',
@@ -265,6 +293,10 @@ allCards = [{
     attack: 12,
     defense: 35,
     text: 'Whenever a creature takes damage, Konnagara gets +1/+0.',
+    onCreatureDamage: function(creatureDamaged, amount) {
+        this.atk++;
+        events.trigger("updateCreature", this);
+    },
 },{
     name: 'Kurumi',
     image: 'http://i.imgur.com/WGOMUSo.jpg',
@@ -333,6 +365,9 @@ allCards = [{
     attack: 9,
     defense: 35,
     text: 'Meiling can intercept an additional time each turn. \n            Meiling\'s damage is not reduced when intercepting.',
+    
+    maxIntercepts: 2,
+    interceptDamageRate: 1.0,
 },{
     name: 'Merlin',
     image: 'http://i.imgur.com/sR6S8Fs.jpg',
@@ -355,6 +390,16 @@ allCards = [{
     attack: 18,
     defense: 35,
     text: 'When Mokou dies, she deals damage equal to her power to each creature. Exile her with 4 time counters. At the beginning of your turn, remove a time counter. When the last is removed, return her to her owner\'s hand.\n',
+    special: {
+        "die": function(){
+                    this.creatures.forEach(function (creature) {
+                                        var damage = GAME.damageFromCreature(this.atk);
+                                        creature.HP -= damage;
+                                        events.trigger("creatureDamage", creature, damage);
+                                   });
+                    return true;
+               }
+    },
 },{
     name: 'Momiji',
     image: 'http://i.imgur.com/a9TdGpz.jpg',
@@ -369,6 +414,25 @@ allCards = [{
     type: 'Spell',
     cost: 2,
     text: 'Moon Sign "Moonlight Ray" deals 15 damage to target creature.  If that creature was already damaged, Moonlight Ray deals 22 damage instead.',
+    effect: function() {
+                var DAMAGE = 15;
+                var MAX_DAMAGE = 22;
+                
+                GAME.chooseTarget(function(target) {
+                                    var damage;
+                                    if (target.HP == target.maxHP) {
+                                        damage = GAME.damageFromSpell(DAMAGE);
+                                        this.dealDamage(target, damage);
+                                        events.trigger("creatureDamage", target, damage);
+                                    }
+                                    else {
+                                        damage = GAME.damageFromSpell(MAX_DAMAGE);
+                                        this.dealDamage(target, damage);
+                                        events.trigger("creatureDamage", target, damage); 
+                                    }
+                                  },
+                                  GAME.findCreature(), this);
+            },
 },{
     name: 'Mystia',
     image: 'http://i.imgur.com/a18rs8e.jpg',
@@ -553,6 +617,14 @@ allCards = [{
     attack: 20,
     defense: 50,
     text: 'At the end of your turn, if Suwako did not attack this turn, she heals 10 health.\n(1), put a card from your hand down as an essence: Return target essence you control to your hand.\n',
+    special: {
+        "end": function() {
+            var DAMAGE_HEALED = 10;
+            
+            if (this.attackCount == 0) this.HP += DAMAGE_HEALED;
+            events.trigger("creatureHeal", this, DAMAGE_HEALED);
+        }
+    },
 },{
     name: 'Sweet Poison',
     image: 'http://i.imgur.com/pVSrqL9.jpg',
@@ -611,18 +683,38 @@ allCards = [{
     type: 'Spell',
     cost: 0,
     text: 'Target creature cannot intercept this turn.  ',
+    effect: function() {
+                GAME.chooseTarget(function(target) {
+                                    target.intercepts = target.maxIntercepts;
+                                  },
+                                  GAME.findCreature(), this);
+            },
 },{
     name: 'War Sign "Little Legion"',
     image: 'http://i.imgur.com/isucNAx.jpg',
     type: 'Spell',
     cost: 3,
     text: 'War Sign "Little Legion" deals X damage to target creature, where X is the number of creatures you control multiplied by 7.',
+    effect: function() {
+                var DAMAGE_PER_CREATURE = 7;
+                
+                GAME.chooseTarget(function(target) {
+                                    var damage = GAME.damageFromSpell(DAMAGE_PER_CREATURE * this.controller.creatures.length);
+                                    this.dealDamage(target, damage);
+                                    events.trigger("creatureDamage", target, damage);
+                                  },
+                                  GAME.findCreature(), this);
+            },
 },{
     name: 'Wind Sign "Tengu Newspaper Deadline Day"',
     image: 'http://i.imgur.com/EWbQwYo.jpg',
     type: 'Spell',
     cost: 3,
     text: 'You may play an additional essence this turn.\nDraw a card.',
+    effect: function() {
+                this.controller.extraPlayableEssences++;
+                this.controller.draw(1);
+    },
 },{
     name: 'Wood Fairy',
     image: 'http://i.imgur.com/683GODc.jpg',
@@ -686,6 +778,20 @@ allCards = [{
     attack: 5,
     defense: 40,
     text: 'Whenever Yuugi would be dealt damage, prevent 5 of that damage.\n            Whenever Yuugi is dealt (more than 0) damage, she gets +5/+0.',
+    takeDamage: function (amount) {
+        var DAMAGE_TO_PREVENT = 5;
+        var ATTACK_TO_INCREASE = 5;
+        
+        var oldHP = this.HP;
+        this.HP = this.HP - GAME.damageToCreature(amount - DAMAGE_TO_PREVENT);
+        
+        if (this.HP <= 0)
+            this.die();
+        else if (this.HP < oldHP) {
+            this.atk += ATTACK_TO_INCREASE;
+        }
+        events.trigger("creatureDamage", this, GAME.damageToCreature(amount - DAMAGE_TO_PREVENT));
+    },
 },{
     name: 'Yuuka',
     image: 'http://i.imgur.com/G3tsKAG.jpg',

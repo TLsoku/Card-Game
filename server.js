@@ -26,8 +26,8 @@ function gamePrep(socket) {
         socket.broadcast.emit('stats', data);
     });
 
-    socket.on('addToField', function(card, id){
-        socket.broadcast.emit('addToField', card,(0-id));
+    socket.on('addToBoard', function(card, id){
+        socket.broadcast.emit('addToBoard', card,(0-id));
     });
 
     socket.on('died', function(id){
