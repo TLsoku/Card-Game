@@ -166,9 +166,22 @@ Creature.prototype.takeDamage = function(amount) {
     events.trigger("creatureDamage", this, GAME.damageToCreature(amount));
 }
 
+Creature.prototype.heal = function(amount) {
+    var beforeHealLife = this.HP;
+    var afterHealLife = Math.min(this.maxHP, this.HP += GAME.healToCreature(amount));
+    this.HP = afterHealLife;
+    
+    // note this is different from takeDamage because a creature can take any amount of damage, but a creature
+    // can only be healed up to its maximum health (and thus would be considered as that much heal)
+    events.trigger("creatureHeal", this, afterHealLife - beforeHealLife);
+}
+
 // this is blank, but each individual creature may have a special function
 // to call when ANY creature is damaged (which is used on creatureDamage event)
+// TODO: add source of damage/heal
 Creature.prototype.onCreatureDamage = function(creatureDamaged, amount) {
+}
+Creature.prototype.onCreatureHeal = function(creatureHealed, amount) {
 }
 
 Creature.prototype.die = function() {

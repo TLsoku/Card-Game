@@ -127,9 +127,9 @@ allCards = [{
                     var DAMAGE_HEALED = 10;
                     
                     this.creatures.forEach(function (creature) {
-                                            creature.HP += DAMAGE_HEALED;
-                                            events.trigger("creatureHeal", creature, DAMAGE_HEALED);
-                                           });
+                        creature.heal(DAMAGE_HEALED);
+                        events.trigger("creatureHeal", creature, DAMAGE_HEALED);
+                    });
                }
     }
 },{
@@ -172,18 +172,6 @@ allCards = [{
     type: 'Spell',
     cost: 4,
     text: 'If you have attacked this turn, you cannot play this spell.  You may not attack this turn.\n            Draw 2 cards.\n            ',
-    effect: function() {
-                var hasAttacked = false;
-                this.controller.creatures.forEach(function (creature) {
-                                                    if (creature.attackCount > 0) hasAttacked = true;
-                                                  });
-                if (hasAttacked == false) {
-                    this.controller.draw(2);
-                    this.controller.creatures.forEach(function (creature) {
-                                                        creature.attackCount = creature.maxAttacks;
-                                                      });
-                }
-           },
 },{
     name: 'Geyser Eruption',
     image: 'http://i.imgur.com/1vCquDn.jpg',
@@ -621,7 +609,7 @@ allCards = [{
         "end": function() {
             var DAMAGE_HEALED = 10;
             
-            if (this.attackCount == 0) this.HP += DAMAGE_HEALED;
+            if (this.attackCount == 0) this.heal(DAMAGE_HEALED);
             events.trigger("creatureHeal", this, DAMAGE_HEALED);
         }
     },

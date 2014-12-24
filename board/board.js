@@ -79,23 +79,32 @@ function statsChanged(stats){
 // Whenever a creature is damaged, run through all creatures on the board and
 // call their "onCreatureDamage"  method which is the special actions they need
 // to take whenever any creature is damaged
-events.on('creatureDamage', function(e, creature, amount) {
+events.on('creatureDamage', function(e, creatureDamaged, amount) {
     GAME.players[0].creatures.forEach(function (creature) {
-                                        if (creature.onCreatureDamage) {
-                                            creature.onCreatureDamage(creature, amount);
-                                        }
-                                      });
+        if (creature.onCreatureDamage) {
+            creature.onCreatureDamage(creatureDamaged, amount);
+        }
+    });
     GAME.players[1].creatures.forEach(function (creature) {
-                                        if (creature.onCreatureDamage) {
-                                            creature.onCreatureDamage(creature, amount);
-                                        }
-                                      });
-    events.trigger("updateCreature", creature);
+        if (creature.onCreatureDamage) {
+            creature.onCreatureDamage(creatureDamaged, amount);
+        }
+    });
+    events.trigger("updateCreature", creatureDamaged);
 });
 
-events.on('creatureHeal', function(e, creature, amount) {
-    // TODO: like creatureDamage but instead creatureHeal
-    events.trigger("updateCreature", creature);
+events.on('creatureHeal', function(e, creatureHealed, amount) {
+    GAME.players[0].creatures.forEach(function (creature) {
+        if (creature.onCreatureHeal) {
+            creature.onCreatureHeal(creatureHealed, amount);
+        }
+    });
+    GAME.players[1].creatures.forEach(function (creature) {
+        if (creature.onCreatureHeal) {
+            creature.onCreatureHeal(creatureHealed, amount);
+        }
+    });
+    events.trigger("updateCreature", creatureHealed);
 });
 
 //Sends a signal to other player to update the board when new cards appear on it
@@ -283,7 +292,6 @@ var GAME = {
     cards: [],
     players: [],
     yourTurn: false,
-    damageRate: 1.0,
     damageToCreatureRate: 1.0,
     damageToCreatureFlat: 0.0,
     damageFromCreatureRate: 1.0,
@@ -292,6 +300,8 @@ var GAME = {
     damageFromSpellFlat: 0.0,
     damageToPlayerRate: 1.0,
     damageToPlayerFlat: 0.0,
+    
+    healToCreatureRate: 1.0,
     
     // these are arrays of creatures that we call their special function
     // whenever a certain "general" event occurs
@@ -343,7 +353,7 @@ var GAME = {
     //       eg. "Whenever a creature deals damage to a player, 4x damage!!"
     
     damageToCreature: function(amount) {
-        return amount * this.damageRate * this.damageToCreatureRate;
+        return amount * this.damageToCreatureRate;
     },
     damageFromCreature: function(amount) {
         return amount * this.damageFromCreatureRate;
@@ -352,7 +362,12 @@ var GAME = {
         return amount * this.damageFromSpellRate;
     },
     damageToPlayer: function(amount) {
-        return amount * this.damageRate * this.damageToPlayerRate;
+        return amount * this.damageToPlayerRate;
+    },
+    
+    
+    healToCreature: function(amount) {
+        return amount * this.healToCreatureRate;
     },
     
     // Prompt the player to choose a target and call the callback function on the chosen target
