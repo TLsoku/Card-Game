@@ -16,6 +16,7 @@ function Player(deck, name) {
     this.pointEssences = [];
     this.powerEssences = [];
 
+    // NOTE: Points and power are initialized in GAME.init in board.js
     this.points = 0;
     this.power = 0;
     this.life = 100;
@@ -26,8 +27,12 @@ function Player(deck, name) {
         start: function() {
             this.active = true;
             this.player.upkeep();
-            this.player.playedPoints = false;
-            this.player.playedPower = false;
+            // number of extra essences (of any type) the player can play this turn
+            this.player.extraPlayableEssences = 0;
+            
+            // number of essences (of each type) the player can play this turn
+            this.player.pointEssencesPlayable = 1;
+            this.player.powerEssencesPlayable = 1;
             $(".menubuttons button").css("display", "block"); //TODO: A bit of display code in here, should probably get moved
         },
         end: function() {
@@ -81,12 +86,12 @@ Player.prototype.removeFromHand = function(card) {  //Removes the specified card
 
 // Returns true/false depending on whether the player can play something as a point essence
 Player.prototype.canPlayPoint = function(){
-    return this.playedPoints == 0;
+    return this.pointEssencesPlayable > 0 || this.extraPlayableEssences > 0;
 }
 
 // Returns true/false depending on whether the player can play something as a power essence
 Player.prototype.canPlayPower = function(){
-    return this.playedPower == 0;
+    return this.powerEssencesPlayable > 0 || this.extraPlayableEssences > 0;
 }
 
 // Plays a card as a point essence.  Note: Refers to actually playing the card from your hand
@@ -95,7 +100,10 @@ Player.prototype.playAsPoint = function(id) {
 
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
-    this.playedPoints = true;
+    if (this.pointEssencesPlayable <= 0)
+        this.extraPlayableEssences--;
+    else
+        this.pointEssencesPlayable--;
     this.addPointToBoard(card);
     return true;
 }
@@ -115,7 +123,10 @@ Player.prototype.playAsPower = function(id) {
 
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
-    this.playedPower = true;
+    if (this.powerEssencesPlayable <= 0)
+        this.extraPlayableEssences--;
+    else
+        this.powerEssencesPlayable--;
     this.addPowerToBoard(card);
     return true;
 }
@@ -221,6 +232,8 @@ Player.prototype.playField = function(id) {
                 this.addToFields(card);
                 card.play();
                 events.trigger("resource", this);
+                
+                // i dont think this is necessary
                 return true;
             },
             this, true);

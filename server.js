@@ -27,11 +27,11 @@ function gamePrep(socket) {
     });
 
     socket.on('addToBoard', function(card, id){
-        socket.broadcast.emit('addToBoard', card,(0-id));
+        socket.broadcast.emit('addToBoard', card, -id);
     });
 
     socket.on('died', function(id){
-        socket.broadcast.emit('died', (0-id));
+        socket.broadcast.emit('died', -id);
     });
 
     socket.on('event', function(phase){
@@ -48,6 +48,10 @@ function gamePrep(socket) {
         data.targetID *= -1;
         data.attackerID *= -1;
         socket.broadcast.emit('combat', data);
+    });
+    
+    socket.on('updateCreature', function(id, changes) {
+        socket.broadcast.emit('updateCreature', -id, changes);
     });
 }
 
@@ -85,7 +89,7 @@ function handler (req, res) {
      req.socket.remoteAddress ||
      req.connection.socket.remoteAddress;
 
-  if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
+  if (pathname == "/") pathname = "/index.html";
 
   if (pathname == "/decksave") {
     // Saving a deck (from the deckbuilder sends a POST to /decksave with the data.
