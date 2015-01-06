@@ -89,7 +89,7 @@ function handler (req, res) {
      req.socket.remoteAddress ||
      req.connection.socket.remoteAddress;
 
-  if (pathname == "/favicon.ico" || pathname == "/") pathname = "/index.html";
+  if (pathname == "/") pathname = "/index.html";
 
   if (pathname == "/decksave") {
     // Saving a deck (from the deckbuilder sends a POST to /decksave with the data.

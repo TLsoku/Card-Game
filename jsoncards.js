@@ -283,8 +283,8 @@ allCards = [{
     text: 'Whenever a creature takes damage, Konnagara gets +1/+0.',
     onCreatureDamage: function(creatureDamaged, amount) {
         this.atk++;
-        var attackChangeObj = {atk: 5};
-        events.trigger("updateCreature", this, attackChangeObj);
+        var attackChangeObj = {atk: this.atk};
+        events.trigger("updateCreature", [this, attackChangeObj]);
     },
 },{
     name: 'Kurumi',
@@ -779,7 +779,7 @@ allCards = [{
         else if (this.HP < oldHP) {
             this.atk += ATTACK_TO_INCREASE;
         }
-        events.trigger("creatureDamage", this, GAME.damageToCreature(amount - DAMAGE_TO_PREVENT));
+        events.trigger("creatureDamage", [this, GAME.damageToCreature(amount - DAMAGE_TO_PREVENT)]);
     },
 },{
     name: 'Yuuka',

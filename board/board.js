@@ -59,18 +59,11 @@ socket.on('updateCreature', function(id, changes) {
     var card = GAME.getCardByID(id);
     
     // merge
-    events.trigger("log", "OLD ATK : " + card.atk);
     $.extend(card, changes);
-    events.trigger("log", "NEW ATK : " + card.atk);
     
     Display.updateCreatureStats(card);
 });
 
-function endTurn(){
-    GAME.players[0].turn.end();
-    GAME.yourTurn = false;
-    socket.emit('turn', 1);
-}
 
 
 //------Events----------
@@ -96,7 +89,7 @@ events.on('creatureDamage', function(e, creatureDamaged, amount) {
             creature.onCreatureDamage(creatureDamaged, amount);
         }
     });
-    events.trigger("updateCreature", creatureDamaged, {HP: creatureDamaged.HP});
+    events.trigger("updateCreature", [creatureDamaged, {HP: creatureDamaged.HP}]);
 });
 
 events.on('creatureHeal', function(e, creatureHealed, amount) {
@@ -110,7 +103,7 @@ events.on('creatureHeal', function(e, creatureHealed, amount) {
             creature.onCreatureHeal(creatureHealed, amount);
         }
     });
-    events.trigger("updateCreature", creatureHealed, {HP: creatureHealed.HP});
+    events.trigger("updateCreature", [creatureHealed, {HP: creatureHealed.HP}]);
 });
 
 //Sends a signal to other player to update the board when new cards appear on it
@@ -121,8 +114,6 @@ events.on('newCard', function(e, card) {
 
 events.on('updateCreature', function(e, card, changes) {
     Display.updateCreatureStats(card);
-    events.trigger("log", "1: " + changes);
-    events.trigger("log", "2: " + changes.atk);
     socket.emit('updateCreature', card.id, changes);
 });
 
@@ -157,8 +148,11 @@ events.on('died', function(e, id) {
    socket.emit("died",id);
 });
 
-
-
+function endTurn(){
+    GAME.players[0].turn.end();
+    GAME.yourTurn = false;
+    socket.emit('turn', 1);
+}
 
 //------------- The Display, how things look on the screen and control of visual aspects ----
 var Display = {
