@@ -26,12 +26,12 @@ function gamePrep(socket) {
         socket.broadcast.emit('stats', data);
     });
 
-    socket.on('addToField', function(card, id){
-        socket.broadcast.emit('addToField', card,(0-id));
+    socket.on('addToBoard', function(card, id){
+        socket.broadcast.emit('addToBoard', card, -id);
     });
 
     socket.on('died', function(id){
-        socket.broadcast.emit('died', (0-id));
+        socket.broadcast.emit('died', -id);
     });
 
     socket.on('event', function(phase){
@@ -48,6 +48,10 @@ function gamePrep(socket) {
         data.targetID *= -1;
         data.attackerID *= -1;
         socket.broadcast.emit('combat', data);
+    });
+    
+    socket.on('updateCreature', function(id, changes) {
+        socket.broadcast.emit('updateCreature', -id, changes);
     });
 }
 
