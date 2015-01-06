@@ -50,8 +50,8 @@ function gamePrep(socket) {
         socket.broadcast.emit('combat', data);
     });
     
-    socket.on('updateCreature', function(id) {
-        socket.broadcast.emit('updateCreature', -id);
+    socket.on('updateCreature', function(id, changes) {
+        socket.broadcast.emit('updateCreature', -id, changes);
     });
 }
 

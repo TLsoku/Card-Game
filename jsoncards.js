@@ -283,7 +283,8 @@ allCards = [{
     text: 'Whenever a creature takes damage, Konnagara gets +1/+0.',
     onCreatureDamage: function(creatureDamaged, amount) {
         this.atk++;
-        events.trigger("updateCreature", this);
+        var attackChangeObj = {atk: 5};
+        events.trigger("updateCreature", this, attackChangeObj);
     },
 },{
     name: 'Kurumi',

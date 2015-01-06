@@ -55,8 +55,14 @@ socket.on('combat', function(data) {
     Display.updateCreatureStats(target);
 });
 
-socket.on('updateCreature', function(id) {
+socket.on('updateCreature', function(id, changes) {
     var card = GAME.getCardByID(id);
+    
+    // merge
+    events.trigger("log", "OLD ATK : " + card.atk);
+    $.extend(card, changes);
+    events.trigger("log", "NEW ATK : " + card.atk);
+    
     Display.updateCreatureStats(card);
 });
 
@@ -90,7 +96,7 @@ events.on('creatureDamage', function(e, creatureDamaged, amount) {
             creature.onCreatureDamage(creatureDamaged, amount);
         }
     });
-    events.trigger("updateCreature", creatureDamaged);
+    events.trigger("updateCreature", creatureDamaged, {HP: creatureDamaged.HP});
 });
 
 events.on('creatureHeal', function(e, creatureHealed, amount) {
@@ -104,7 +110,7 @@ events.on('creatureHeal', function(e, creatureHealed, amount) {
             creature.onCreatureHeal(creatureHealed, amount);
         }
     });
-    events.trigger("updateCreature", creatureHealed);
+    events.trigger("updateCreature", creatureHealed, {HP: creatureHealed.HP});
 });
 
 //Sends a signal to other player to update the board when new cards appear on it
@@ -113,9 +119,11 @@ events.on('newCard', function(e, card) {
     socket.emit('addToBoard', card.name, card.id);
 });
 
-events.on('updateCreature', function(e, card) {
+events.on('updateCreature', function(e, card, changes) {
     Display.updateCreatureStats(card);
-    socket.emit('updateCreature', card.id);
+    events.trigger("log", "1: " + changes);
+    events.trigger("log", "2: " + changes.atk);
+    socket.emit('updateCreature', card.id, changes);
 });
 
 //A bunch of events to update stats, separated by type in case they should be different later
