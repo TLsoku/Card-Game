@@ -55,11 +55,15 @@ socket.on('combat', function(data) {
     Display.updateCreatureStats(target);
 });
 
-function endTurn(){
-    GAME.players[0].turn.end();
-    GAME.yourTurn = false;
-    socket.emit('turn', 1);
-}
+socket.on('updateCreature', function(id, changes) {
+    var card = GAME.getCardByID(id);
+    
+    // merge
+    $.extend(card, changes);
+    
+    Display.updateCreatureStats(card);
+});
+
 
 
 //------Events----------
@@ -71,10 +75,46 @@ function statsChanged(stats){
     socket.emit('stats', stats);
 }
 
+// Whenever a creature is damaged, run through all creatures on the board and
+// call their "onCreatureDamage"  method which is the special actions they need
+// to take whenever any creature is damaged
+events.on('creatureDamage', function(e, creatureDamaged, amount) {
+    GAME.players[0].creatures.forEach(function (creature) {
+        if (creature.onCreatureDamage) {
+            creature.onCreatureDamage(creatureDamaged, amount);
+        }
+    });
+    GAME.players[1].creatures.forEach(function (creature) {
+        if (creature.onCreatureDamage) {
+            creature.onCreatureDamage(creatureDamaged, amount);
+        }
+    });
+    events.trigger("updateCreature", [creatureDamaged, {HP: creatureDamaged.HP}]);
+});
+
+events.on('creatureHeal', function(e, creatureHealed, amount) {
+    GAME.players[0].creatures.forEach(function (creature) {
+        if (creature.onCreatureHeal) {
+            creature.onCreatureHeal(creatureHealed, amount);
+        }
+    });
+    GAME.players[1].creatures.forEach(function (creature) {
+        if (creature.onCreatureHeal) {
+            creature.onCreatureHeal(creatureHealed, amount);
+        }
+    });
+    events.trigger("updateCreature", [creatureHealed, {HP: creatureHealed.HP}]);
+});
+
 //Sends a signal to other player to update the board when new cards appear on it
 events.on('newCard', function(e, card) {
     Display.addToBoard(card, true);
     socket.emit('addToBoard', card.name, card.id);
+});
+
+events.on('updateCreature', function(e, card, changes) {
+    Display.updateCreatureStats(card);
+    socket.emit('updateCreature', card.id, changes);
 });
 
 //A bunch of events to update stats, separated by type in case they should be different later
@@ -82,6 +122,7 @@ events.on('resource', function(e, player) {statsChanged(player.getStats());});
 events.on('life', function(e, player) {statsChanged(player.getStats());});
 events.on('essence', function(e, player) {statsChanged(player.getStats());});
 events.on('deck', function(e, player) {statsChanged(player.getStats());});
+events.on('playerDamage', function(e, player) {statsChanged(player.getStats());});
 
 // Event that triggers on a variety of game events.  Will signal the other player
 //  it occured, as well as trigger the abilities for that event for all creatures
@@ -107,8 +148,11 @@ events.on('died', function(e, id) {
    socket.emit("died",id);
 });
 
-
-
+function endTurn(){
+    GAME.players[0].turn.end();
+    GAME.yourTurn = false;
+    socket.emit('turn', 1);
+}
 
 //------------- The Display, how things look on the screen and control of visual aspects ----
 var Display = {
@@ -165,7 +209,7 @@ var Display = {
             .find("img").attr("src", card.image);
         if (player) { //You can only use your own creatures to attack or use abilities
             card.div.click(function(e){
-               if (GAME.yourTurn && card.attackCount == 0) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
+               if (GAME.yourTurn && card.attackCount < card.maxAttacks) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
         
@@ -250,6 +294,22 @@ var GAME = {
     cards: [],
     players: [],
     yourTurn: false,
+    damageToCreatureRate: 1.0,
+    damageToCreatureFlat: 0.0,
+    damageFromCreatureRate: 1.0,
+    damageFromCreatureFlat: 0.0,
+    damageFromSpellRate: 1.0,
+    damageFromSpellFlat: 0.0,
+    damageToPlayerRate: 1.0,
+    damageToPlayerFlat: 0.0,
+    
+    healToCreatureRate: 1.0,
+    
+    // these are arrays of creatures that we call their special function
+    // whenever a certain "general" event occurs
+    // eg. "Whenever a creature is dealt damage" or "Whenever a creature dies"
+    whenCreatureDies: [],
+    
     init: function() {
         if (!(localStorage['My deck'])) { //TODO: Let them load a deck of their choice
            alert("Save a deck with the name 'My deck' in order to play. (The default deck name)");
@@ -270,14 +330,48 @@ var GAME = {
         
         // Sets up initial values for yourself (hand, resources)
         this.players.push(new Player(deck));
-        this.players[0].points = 0;
-        this.players[0].power = 0;
+        this.players[0].points = 100; // for testing purposes
+        this.players[0].power = 100;
         this.players[0].draw(7);
 
         // Add a second player (opponent) but don't give him any stats yet
         this.players.push(new Player());
     },
 
+    // These functions determine how much damage are dealt from creatures/spells to creatures/players
+    //
+    // Examples:
+    // "Creatures deal 2x damage" would modify damageFromCreatureRate
+    // "Creatures take 2x damage" would modify damageToCreatureRate
+    // "All damage is doubled" would modify damageRate
+    // "Whenever a spell deals damage, it deals 5 more damage" would modify damageFromSpellFlat
+    //
+    // NOTE: damageRate is only calculated when to a creature or player, so that they are not
+    //       double-counted when calculating from a creature or spell
+    //
+    // TODO: Implement calculations of Flat constants. However, to do so, need to
+    //       first implement order of operations (aka stack). I also think we'll
+    //       eventually need even more of these, like "damageFromCreatureToPlayer"
+    //       eg. "Whenever a creature deals damage to a player, 4x damage!!"
+    
+    damageToCreature: function(amount) {
+        return amount * this.damageToCreatureRate;
+    },
+    damageFromCreature: function(amount) {
+        return amount * this.damageFromCreatureRate;
+    },
+    damageFromSpell: function(amount) {
+        return amount * this.damageFromSpellRate;
+    },
+    damageToPlayer: function(amount) {
+        return amount * this.damageToPlayerRate;
+    },
+    
+    
+    healToCreature: function(amount) {
+        return amount * this.healToCreatureRate;
+    },
+    
     // Prompt the player to choose a target and call the callback function on the chosen target
     // callback is the function to call, will be passed the target as a parameter
     // validTargets is an array of cards which can be targetted

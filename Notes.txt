@@ -1,0 +1,33 @@
+How to deal with damage? This is a big question, dealing with
+lots of questions of where to place what since lots of functions
+are involved. Take a look for example how to implement something like
+Remi's life healing (much harder than Yuugi's damage reduction).
+
+Need a way for spells/creatures to refer to the opponent (unless I'm
+supposed to use GAME for that? Which is fine, but I wasn't sure).
+
+I am working on updating both players' interface after spells dealing damage
+and so forth, however, I am using a generic "updateCreature" event/socket.
+I use this for, well, generic uses, like Konna's "+1 attack after a creature
+is damaged" ability because I don't know what else to call it. Feel free to
+change it to a better name, however be wary that it is used basically
+any time a creature is damaged outside of combat, and thus when stats are
+changed outside of combat (eg. Konna again). Also, right now it
+still isn't updating correctly (eg. Konna gains attack but it's only shown
+for 1 player, the other player still sees default 12) and I'm not sure why.
+
+'updateCreatureStats' is triggered whenever nothing else makes sense, but we
+still need to update the creature's stats.
+'creatureDamage' is triggered whenever any damage occurs, and ideally should
+trigger updateCreatureStats afterwards.
+
+There were quite a few last minute changes so sorry if some stuff don't work.
+This is mostly just to show you my code, to make sure I'm on the right track
+and ask how we're going to implement certain features in the near-future. So
+feel free to not pull code but just make sure you go over what I did so
+we can talk about it later. Thanks.
+
+I will be busy for most of the day so hopefully we can discuss some time later.
+
+P.S. "damageRate" can probably just be removed and any time we want to use it,
+use "damageToCreatureRate" and "damageToPlayerRate" instead.
