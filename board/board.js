@@ -180,7 +180,8 @@ var Display = {
                 .click(function(e) {
                     if (!card.owner.turn.active) return false;
                     var playedSuccess = false;
-                    card.clickInHand();
+                    var that = this;
+                    card.clickInHand(function(){console.log(that); t.removeFromHand(that);});
 /*
                     //Play as an essence
                     if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card.id);
@@ -249,10 +250,12 @@ var Display = {
     // Arranges cards in a div to prevent holes.
     // Pass in a div or the jquery selection of a div to position its children
     positionThumbnails: function($div){
+        THUMBNAIL_SIZE = 10; //Thumbnails are 10% width of parent
+
         if (!($div instanceof jQuery)) $div = $($div);
 
-        $div.children("div").each(function(index){
-            $(this).css("left", (index*10) + "%");
+        $div.children("div.thumbnail").each(function(index){
+            $(this).css("left", (index*THUMBNAIL_SIZE) + "%");
         });
     },
 

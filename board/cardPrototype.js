@@ -29,25 +29,31 @@ Card.prototype.toString = function(){
 //  Creatures and Fields can be played directly to the board by clicking the board.
 //  Spells can be played directly by clicking a target, or on the field if there's no target.
 //  Other options? (e.g. cards that can be discarded directly from hand, put back into deck, etc)
-Card.prototype.clickInHand = function(){
+//  callback is a function that will be called once the card is played somewhere.  It will not be called if the click is cancelled
+
+Card.prototype.clickInHand = function(callback){
     var thisCard = this;
 
     // Highlight points/power piles if they can play that resource
     if (this.owner.canPlayPoint()){
         GAME.addSingleClick('.pointpile', function(){
-            thisCard.owner.playAsPoint(thisCard.id);
+            var success = thisCard.owner.playAsPoint(thisCard.id);
+            console.log(success);
+            if (success) callback();
         });
     }
     if (this.owner.canPlayPower()){
         GAME.addSingleClick('.powerpile', function(){
-            thisCard.owner.playAsPower(thisCard.id);
+            var success = thisCard.owner.playAsPower(thisCard.id);
+            if (success) callback();
         });
     }
 
     // If the card being played doesn't require targets, play it directly to the board
     if (!this.hasTargets){
         GAME.addSingleClick('.player.board', function(){
-            thisCard.owner.playCard(thisCard);
+            var success = thisCard.owner.playCard(thisCard);
+            if (success) callback();
         });
     }
 }

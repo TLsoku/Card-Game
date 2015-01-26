@@ -11,6 +11,7 @@ function Player(deck, name) {
     this.deck = _.shuffle(this.deck);
     _.each(this.deck, function(card){
         card.owner = this;
+        card.controller = this;
     }, this);
 
     this.pointEssences = [];
