@@ -65,7 +65,6 @@ Card.prototype.clickInHand = function(callback){
     for (ev in t.func)
         events.on(ev + '.' +  t.id , function(){t.func[ev].call(t);});
 }
-
 Card.prototype.removeTriggers = function(){
     for (ev in t.func)
         events.off(ev + '.' + this.id);
@@ -153,13 +152,9 @@ function Creature(original, id) { //Object to represent a single Creature in the
     this.atk = original.attack;
     this.attackCount = 0; //How many times the creature has attacked this turn.  Resets every turn.
     this.maxAttacks = 1;
-    this.interceptCount = 0;
+    this.intercepts = 0;
     this.maxIntercepts = 1;
     this.interceptDamageRate = 0.5;
-    
-    // merge the original creature with this one after the default values are set
-    // so that any manually edited values (eg. different maxIntercepts count) are merged properly
-    //$.extend(this, original);
     
     if (original.takeDamage) this.takeDamage = original.takeDamage;
     if (original.onCreatureDamage) this.onCreatureDamage = original.onCreatureDamage;
@@ -169,17 +164,40 @@ function Creature(original, id) { //Object to represent a single Creature in the
 
 Creature.prototype = Object.create(Card.prototype); //Inheriting line
 
-// Creature takes damage (modified through GAME)
-// returns the amount of damage actually dealt to the Creature
-Creature.prototype.takeDamage = function(source, amount) {
-    var oldHP = this.HP;
-    var damage = Math.floor(GAME.modifyDamage(source, this, amount));
+Creature.prototype.fight = function(opp) {
+    // Sometimes, taking damage affects the creatures' attack.
+    // Example: "Whenever this creature is dealt damage, it gets +5/+0."
+    // Since both creatures are supposed to deal damage at the same time,
+    // save their old attack value
+    var currentAttack = this.atk;
+    var oppAttack = opp.atk;
     
-    this.HP -= damage;
+    events.trigger("log", this.name + " and " + opp.name + " fight!");
+    
+    this.takeDamage(GAME.damageFromCreature(oppAttack));
+    opp.takeDamage(GAME.damageFromCreature(currentAttack));
+}
+
+Creature.prototype.intercept = function(opp) {
+    // Sometimes, taking damage affects the creatures' attack.
+    // Example: "Whenever this creature is dealt damage, it gets +5/+0."
+    // Since both creatures are supposed to deal damage at the same time,
+    // save their old attack value
+    var currentAttack = this.atk;
+    var oppAttack = opp.atk;
+    
+    events.trigger("log", this.name + " intercepts " + opp.name + "!");
+    this.intercepts += 1;
+    
+    this.takeDamage(GAME.damageFromCreature(oppAttack));
+    opp.takeDamage(Math.floor(GAME.damageFromCreature(currentAttack) * this.interceptDamageRate));
+}
+
+Creature.prototype.takeDamage = function(amount) {
+    this.HP = this.HP - GAME.damageToCreature(amount);
     if (this.HP <= 0)
         this.die();
-    
-    return damage;
+    events.trigger("creatureDamage", this, GAME.damageToCreature(amount));
 }
 
 Creature.prototype.heal = function(amount) {

@@ -294,17 +294,6 @@ allCards = [{
     attack: 0,
     defense: 27,
     text: 'Put the top card of your deck into your graveyard: Kurumi heals 5 health. You may only use this ability once each turn.\nWhen Kurumi takes damage, she gains attack equal to half the health she lost, rounded down.\n            ',
-    
-    /*
-    var origTakeDamage = takeDamage;
-    takeDamage: function (source, amount) {
-        var damage = origTakeDamage.call(this, source, amount);
-        var INCREASE_ATTACK_RATE = 0.5;
-        
-        if (damage > 0) {
-            this.atk += Math.floor(damage * INCREASE_ATTACK_RATE);
-        }
-    },*/
 },{
     name: 'Letty',
     image: 'http://i.imgur.com/4Btmqxo.jpg',
@@ -392,11 +381,10 @@ allCards = [{
     text: 'When Mokou dies, she deals damage equal to her power to each creature. Exile her with 4 time counters. At the beginning of your turn, remove a time counter. When the last is removed, return her to her owner\'s hand.\n',
     special: {
         "die": function(){
-                    var ON_DEATH_DAMAGE = this.atk;
-                    
-                    this.controller.creatures.forEach(function (creature) {
-                                        creature.takeDamage(ON_DEATH_DAMAGE);
-                                        //events.trigger("creatureDamage", creature, creature.takeDamage(ON_DEATH_DAMAGE));
+                    this.creatures.forEach(function (creature) {
+                                        var damage = GAME.damageFromCreature(this.atk);
+                                        creature.HP -= damage;
+                                        events.trigger("creatureDamage", creature, damage);
                                    });
                     return true;
                }
@@ -423,12 +411,14 @@ allCards = [{
                                     var damage;
                                     if (target.HP == target.maxHP) {
                                         damage = GAME.damageFromSpell(DAMAGE);
+                                        this.dealDamage(target, damage);
+                                        events.trigger("creatureDamage", target, damage);
                                     }
                                     else {
                                         damage = GAME.damageFromSpell(MAX_DAMAGE);
+                                        this.dealDamage(target, damage);
+                                        events.trigger("creatureDamage", target, damage); 
                                     }
-                                    this.dealDamage(target, damage);
-                                    events.trigger("creatureDamage", target, damage); 
                                   },
                                   GAME.findCreature(), this);
             },
@@ -777,21 +767,19 @@ allCards = [{
     attack: 5,
     defense: 40,
     text: 'Whenever Yuugi would be dealt damage, prevent 5 of that damage.\n            Whenever Yuugi is dealt (more than 0) damage, she gets +5/+0.',
-    takeDamage: function (source, amount) {
+    takeDamage: function (amount) {
+        var DAMAGE_TO_PREVENT = 5;
         var ATTACK_TO_INCREASE = 5;
         
         var oldHP = this.HP;
-        var damage = Math.floor(GAME.modifyDamage(source, this, amount));
+        this.HP = this.HP - GAME.damageToCreature(amount - DAMAGE_TO_PREVENT);
         
-        this.HP -= damage;
         if (this.HP <= 0)
             this.die();
         else if (this.HP < oldHP) {
             this.atk += ATTACK_TO_INCREASE;
         }
-        //events.trigger("creatureDamage", [this, damage]);
-        
-        return damage;
+        events.trigger("creatureDamage", [this, GAME.damageToCreature(amount - DAMAGE_TO_PREVENT)]);
     },
 },{
     name: 'Yuuka',
