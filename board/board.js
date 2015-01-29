@@ -33,27 +33,33 @@ socket.on('attack', function(a, t){
 
     GAME.chooseTarget(function(interceptor){
         if (interceptor == target){
-            socket.emit('combat', {intercept: false, attackerID: attacker.id, targetID: target.id});
-            target.fight(attacker);
+            socket.emit('combat', {attackerID: attacker.id, targetID: target.id, interceptorID: false});
+            GAME.fight(attacker, target, false);
+            Display.updateCreatureStats(target);
         }
         else {
-            interceptor.intercept(attacker);
-            socket.emit('combat', {intercept: true, attackerID: attacker.id, targetID: interceptor.id});
+            GAME.fight(attacker, target, interceptor);
+            socket.emit('combat', {attackerID: attacker.id, targetID: target.id, interceptorID: interceptor.id});
+            Display.updateCreatureStats(interceptor);
         }
         Display.updateCreatureStats(attacker);
-        Display.updateCreatureStats(interceptor);
     }, GAME.findInterceptor(), attacker);
 });
 
 socket.on('combat', function(data) {
     var attacker = GAME.getCardByID(data.attackerID);
     var target = GAME.getCardByID(data.targetID);
-    if (data.intercept)
-        target.intercept(attacker);
-    else
-        target.fight(attacker);
+    
+    if (data.interceptorID) {
+        var interceptor = GAME.getCardByID(data.interceptorID);
+        GAME.fight(attacker, target, interceptor);
+        Display.updateCreatureStats(interceptor);
+    }
+    else {
+        GAME.fight(attacker, target, false)
+        Display.updateCreatureStats(target);
+    }
     Display.updateCreatureStats(attacker);
-    Display.updateCreatureStats(target);
 });
 
 socket.on('updateCreature', function(id, changes) {
@@ -79,6 +85,7 @@ function statsChanged(stats){
 // Whenever a creature is damaged, run through all creatures on the board and
 // call their "onCreatureDamage"  method which is the special actions they need
 // to take whenever any creature is damaged
+/*
 events.on('creatureDamage', function(e, creatureDamaged, amount) {
     GAME.players[0].creatures.forEach(function (creature) {
         if (creature.onCreatureDamage) {
@@ -106,6 +113,10 @@ events.on('creatureHeal', function(e, creatureHealed, amount) {
     });
     events.trigger("updateCreature", [creatureHealed, {HP: creatureHealed.HP}]);
 });
+*/
+
+
+
 
 //Sends a signal to other player to update the board when new cards appear on it
 events.on('newCard', function(e, card) {
@@ -298,6 +309,8 @@ var GAME = {
     cards: [],
     players: [],
     yourTurn: false,
+    alterDamageFunctionList: [],
+    alterDamageOpponentFunctionList: [],
     damageToCreatureRate: 1.0,
     damageToCreatureFlat: 0.0,
     damageFromCreatureRate: 1.0,
@@ -358,6 +371,7 @@ var GAME = {
     //       eventually need even more of these, like "damageFromCreatureToPlayer"
     //       eg. "Whenever a creature deals damage to a player, 4x damage!!"
     
+    /*
     damageToCreature: function(amount) {
         return amount * this.damageToCreatureRate;
     },
@@ -370,7 +384,70 @@ var GAME = {
     damageToPlayer: function(amount) {
         return amount * this.damageToPlayerRate;
     },
+    */
     
+    
+    
+    
+    
+    
+    // EXTREMELY IMPORTANT:
+    // All damage dealt in the game must be filtered through this function first.
+    // This is basically all done in Creature.takeDamage (TODO: player takes damage).
+    // This function modifies damage from source to target using all the
+    // damage-modifying functions in alterDamageFunctionList, which is basically
+    // every effect that affects damage on the board.
+    //
+    // Example function  that could be in the list:
+    // f : (source, target, amount) {
+    //      if someCondition
+    //          amount = amount + 5;
+    //      return amount;
+    // }
+    modifyDamage: function(source, target, amount) {
+        temp = amount;
+        
+        // each function in this list may possibly
+        // affect how much damage is actually done
+        this.alterDamageFunctionList.forEach(function (func) {
+            temp = func(source, target, temp);
+        });
+        this.alterDamageOpponentFunctionList.forEach(function (func) {
+            temp = func(source, target, temp);
+        });
+        
+        return temp;
+    },
+    
+    // attacker: Creature that initiated the fight
+    // target: Creature that the attacker chose to attack
+    // interceptor: Creature that intercepted the attacker
+    fight: function(attacker, target, interceptor) {
+        // Sometimes, taking damage affects the creatures' attack.
+        // Example: "Whenever this creature is dealt damage, it gets +5/+0."
+        // Since both creatures are supposed to deal damage at the same time,
+        // save their old attack value so it can't change as we deal damage
+        // one at a time.
+        var currentAttack = attacker.atk;
+        
+        if (!interceptor) { // They chose not to intercept
+            var oppAttack = target.atk;
+        
+            events.trigger("log", attacker.name + " and " + target.name + " fight!");
+        
+            attacker.takeDamage(target, oppAttack);
+            target.takeDamage(attacker, currentAttack);
+        }
+        else { // They chose an interceptor
+            var oppAttack = interceptor.atk;
+        
+            events.trigger("log", interceptor.name + " intercepts " + attacker.name + "!");
+            interceptor.interceptCount ++;
+            
+            attacker.takeDamage(interceptor, oppAttack * interceptor.interceptDamageRate);
+            interceptor.takeDamage(attacker, currentAttack);
+        }
+    },
     
     healToCreature: function(amount) {
         return amount * this.healToCreatureRate;
@@ -552,7 +629,7 @@ var GAME = {
 
     // Finds creatures you control that are capable of intercepting
     findInterceptor: function(){
-        return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
+        return this.findTargets(this.players[0].creatures, function(c) {return c.interceptCount < c.maxIntercepts;});
     },
 
     // Finds creatures, can pass in a function to filter further
