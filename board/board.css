@@ -15,10 +15,21 @@ div {
 }
 
 .pointpile{
-    top: 1.5%;
-    left: 21%;
-    width: 59%;
-    height: 41.5%;
+    top: 50%;
+    left: 1%;
+    width: 10%;
+    height: 45%;
+    background-color: #00F;
+    overflow: auto;
+    z-index:2;
+}
+
+.powerpile{
+    top: 50%;
+    left: 89%;
+    width: 10%;
+    height: 45%;
+    background-color: #F00;
     overflow: auto;
     z-index:2;
 }

@@ -24,6 +24,41 @@ Card.prototype.toString = function(){
     return "A card called " + this.name;
 }
 
+// What options you have when you click the card in your hand.
+//  All cards can be played as essences by clicking essence pile (provided you're allowed to this turn).
+//  Creatures and Fields can be played directly to the board by clicking the board.
+//  Spells can be played directly by clicking a target, or on the field if there's no target.
+//  Other options? (e.g. cards that can be discarded directly from hand, put back into deck, etc)
+//  callback is a function that will be called once the card is played somewhere.  It will not be called if the click is cancelled
+
+Card.prototype.clickInHand = function(callback){
+    var thisCard = this;
+
+    // Highlight points/power piles if they can play that resource
+    if (this.owner.canPlayPoint()){
+        GAME.addSingleClick('.pointpile', function(){
+            var success = thisCard.owner.playAsPoint(thisCard.id);
+            console.log(success);
+            if (success) callback();
+        });
+    }
+    if (this.owner.canPlayPower()){
+        GAME.addSingleClick('.powerpile', function(){
+            var success = thisCard.owner.playAsPower(thisCard.id);
+            if (success) callback();
+        });
+    }
+
+    // If the card being played doesn't require targets, play it directly to the board
+    // Passes the callback to the playCard function so it can be called after alternate costs are paid
+    if (!this.hasTargets){
+        GAME.addSingleClick('.player.board', function(){
+            var success = thisCard.owner.playCard(thisCard, callback);
+            if (success) callback();
+        });
+    }
+}
+
 //TODO: Was considering adding triggers like this, but decided on another way to do it.  Still in here just in case I need to go back to this old way
 /*Card.prototype.addTriggers = function(){
     var t = this;
@@ -191,7 +226,7 @@ Creature.prototype.die = function() {
     }
     else {
         this.state = "graveyard";
-        this.controller.removeFromCreatures(this);
+        this.owner.removeFromCreatures(this);
     }
 
     events.trigger("log", this.name + " has died");
