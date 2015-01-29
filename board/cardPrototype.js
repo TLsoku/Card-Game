@@ -50,9 +50,10 @@ Card.prototype.clickInHand = function(callback){
     }
 
     // If the card being played doesn't require targets, play it directly to the board
+    // Passes the callback to the playCard function so it can be called after alternate costs are paid
     if (!this.hasTargets){
         GAME.addSingleClick('.player.board', function(){
-            var success = thisCard.owner.playCard(thisCard);
+            var success = thisCard.owner.playCard(thisCard, callback);
             if (success) callback();
         });
     }

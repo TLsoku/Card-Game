@@ -171,10 +171,11 @@ Player.prototype.removeFromCreatures = function(card) {
 }
 
 // General purpose function for playing a card, redirects to the apppropriate play function
-Player.prototype.playCard = function(card) {
+// The callback is used to remove the card from hand after played, used if player must make more choices after playing
+Player.prototype.playCard = function(card, callback) {
 
     if (card instanceof Creature) return this.playCreature(card.id);
-    if (card instanceof Field) return this.playField(card.id);
+    if (card instanceof Field) return this.playField(card.id, callback);
     if (card instanceof Spell) return this.playSpell(card.id);
 
     events.trigger("log", (typeof card) + " is not a valid card type and cannot be played.");
@@ -216,28 +217,27 @@ Player.prototype.playSpell = function(id) {
 
 // Play a field.  Removes the field from your hand and adds it to fields,
 //  assuming you can afford it.  Gives the option to play with points or power.
+// Callback will be called after the field is played successfully
 // TODO: Generalize this to play fields that aren't in your hand?  
-Player.prototype.playField = function(id) {
+Player.prototype.playField = function(id, callback) {
     var card = GAME.getCardByID(id);
-    
+    var that = this;
+
+    function playingField(card){
+        callback();
+        that.addToFields(card);
+        card.play();
+        events.trigger("resource", that);
+    }
+
     // First, check if it's possible to pay with either points or power. If it's possible,
     // then see how the player wants to pay it. They also have the option to cancel.
     if (this.points >= card.cost || this.power >= card.cost)
     {
-        // note that we can send "this" for the player who is paying for it, since this is method under Player
-        GAME.promptResourcePayment("You must pay (" + card.cost + ") for " + card.name + ".", card.cost, this,
-            function()
-            {
-                // cost is handled by promptResourcePayment, so no need to do it here
-                this.removeFromHand(card);
-                this.addToFields(card);
-                card.play();
-                events.trigger("resource", this);
-                
-                // i dont think this is necessary
-                return true;
-            },
-            this, true);
+        GAME.promptChoice("Play " + card.name + " with points or power? (Costs " + card.cost + ")", {
+            "Point": function() {this.points -= card.cost; playingField(card);},
+            "Power": function() {this.power -= card.cost; playingField(card);}
+        }, this);
     }
     else
     {
