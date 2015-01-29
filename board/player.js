@@ -11,6 +11,7 @@ function Player(deck, name) {
     this.deck = _.shuffle(this.deck);
     _.each(this.deck, function(card){
         card.owner = this;
+        card.controller = this;
     }, this);
 
     this.pointEssences = [];
@@ -46,7 +47,7 @@ function Player(deck, name) {
 //  Points and power increased by number of essences
 //  Creatures intercept and attack count is reset to 0
 //  Trigger an event to trigger upkeep effects on your cards and opponent's stuff
-//  Draw a card, update stats by triggering resource change
+//  Draw a card, update stats by triggering essence change
 Player.prototype.upkeep = function(){
     this.points += this.pointEssences.length;
     this.power += this.powerEssences.length;
@@ -84,10 +85,20 @@ Player.prototype.removeFromHand = function(card) {  //Removes the specified card
 
 // TODO: Playing as power/point essence could maybe be condensed into 2 functions instead of 4
 
+// Returns true/false depending on whether the player can play something as a point essence
+Player.prototype.canPlayPoint = function(){
+    return this.pointEssencesPlayable > 0 || this.extraPlayableEssences > 0;
+}
 
-// Plays a card as a point resource.  Note: Refers to actually playing the card from your hand
+// Returns true/false depending on whether the player can play something as a power essence
+Player.prototype.canPlayPower = function(){
+    return this.powerEssencesPlayable > 0 || this.extraPlayableEssences > 0;
+}
+
+// Plays a card as a point essence.  Note: Refers to actually playing the card from your hand
 Player.prototype.playAsPoint = function(id) {
-    if (this.pointEssencesPlayable <= 0 && this.extraPlayableEssences <= 0) return false; //Can only play one point resource per turn
+    if (!(this.canPlayPoint())) return false;
+
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     if (this.pointEssencesPlayable <= 0)
@@ -98,8 +109,8 @@ Player.prototype.playAsPoint = function(id) {
     return true;
 }
 
-// Puts a card onto the board as a point resource.  NOTE: Not the same as playing a point resource from hand.
-// Playing a point resource from hand will use this, but also cards like Kanako.
+// Puts a card onto the board as a point essence.  NOTE: Not the same as playing a point essence from hand.
+// Playing a point essence from hand will use this, but also cards like Kanako.
 Player.prototype.addPointToBoard = function(card){
     card.state = "land";
     this.pointEssences.push(card);
@@ -107,9 +118,10 @@ Player.prototype.addPointToBoard = function(card){
 }
 
 
-// Plays a card as a power resource.  Note: Refers to actually playing the card from your hand
+// Plays a card as a power essence.  Note: Refers to actually playing the card from your hand
 Player.prototype.playAsPower = function(id) {
-    if (this.powerEssencesPlayable <= 0 && this.extraPlayableEssences <= 0) return false;
+    if (!(this.canPlayPower())) return false;
+
     var card = GAME.getCardByID(id);
     this.removeFromHand(card);
     if (this.powerEssencesPlayable <= 0)
@@ -120,7 +132,7 @@ Player.prototype.playAsPower = function(id) {
     return true;
 }
 
-//Puts a card onto the board as a power resource.  NOTE: Not the same as playing a power resource from hand.
+//Puts a card onto the board as a power essence.  NOTE: Not the same as playing a power essence from hand.
 Player.prototype.addPowerToBoard = function(card){
     card.state = "land";
     this.powerEssences.push(card);
@@ -158,6 +170,18 @@ Player.prototype.removeFromCreatures = function(card) {
     //card.removeTriggers();
 }
 
+// General purpose function for playing a card, redirects to the apppropriate play function
+// The callback is used to remove the card from hand after played, used if player must make more choices after playing
+Player.prototype.playCard = function(card, callback) {
+
+    if (card instanceof Creature) return this.playCreature(card.id);
+    if (card instanceof Field) return this.playField(card.id, callback);
+    if (card instanceof Spell) return this.playSpell(card.id);
+
+    events.trigger("log", (typeof card) + " is not a valid card type and cannot be played.");
+    return false;
+}
+
 // Play a creature.  Removes the creature from your hand and adds it to creatures,
 //  assuming you can afford it.  Returns true if you played it, false otherwise.
 // TODO: Generalize this to play creatures that aren't in your hand?  
@@ -193,28 +217,27 @@ Player.prototype.playSpell = function(id) {
 
 // Play a field.  Removes the field from your hand and adds it to fields,
 //  assuming you can afford it.  Gives the option to play with points or power.
+// Callback will be called after the field is played successfully
 // TODO: Generalize this to play fields that aren't in your hand?  
-Player.prototype.playField = function(id) {
+Player.prototype.playField = function(id, callback) {
     var card = GAME.getCardByID(id);
-    
+    var that = this;
+
+    function playingField(card){
+        callback();
+        that.addToFields(card);
+        card.play();
+        events.trigger("resource", that);
+    }
+
     // First, check if it's possible to pay with either points or power. If it's possible,
     // then see how the player wants to pay it. They also have the option to cancel.
     if (this.points >= card.cost || this.power >= card.cost)
     {
-        // note that we can send "this" for the player who is paying for it, since this is method under Player
-        GAME.promptResourcePayment("You must pay (" + card.cost + ") for " + card.name + ".", card.cost, this,
-            function()
-            {
-                // cost is handled by promptResourcePayment, so no need to do it here
-                this.removeFromHand(card);
-                this.addToFields(card);
-                card.play();
-                events.trigger("resource", this);
-                
-                // i dont think this is necessary
-                return true;
-            },
-            this, true);
+        GAME.promptChoice("Play " + card.name + " with points or power? (Costs " + card.cost + ")", {
+            "Point": function() {this.points -= card.cost; playingField(card);},
+            "Power": function() {this.power -= card.cost; playingField(card);}
+        }, this);
     }
     else
     {
