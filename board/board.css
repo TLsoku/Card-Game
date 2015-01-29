@@ -1,5 +1,5 @@
 div {
-    border: 1px solid black;
+    border: 0px solid black;
     box-sizing: border-box;
     position: absolute;
     font-size: 2vmin;
@@ -10,7 +10,6 @@ div {
     left: 21%;
     width: 58%;
     height: 41.5%;
-    background-color: #3c3;
     overflow: auto;
 
 }
@@ -47,7 +46,6 @@ div {
     top: 1.5%;
     width: 20%;
     height: 41.5%;
-    background-color: #c33;
 }
 
 .player {
@@ -59,13 +57,11 @@ div {
     top: 1.5%;
     width: 20%;
     height: 97%;
-    background-color: #cc3;
     text-align: bottom;
     overflow:auto;
 }
 
 .hand {
-    background-color: #c3c;
     top: 84.5%;
     left: 21%;
     width: 58%;
@@ -89,7 +85,6 @@ div {
     width: 20%;
     height: 14%;
     left: 79%;
-    background-color: #3cc;
 }
 
 .thumbnail {
