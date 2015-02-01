@@ -47,6 +47,7 @@ function gamePrep(socket) {
     socket.on('combat', function(data){
         data.targetID *= -1;
         data.attackerID *= -1;
+        data.interceptorID *= -1;
         socket.broadcast.emit('combat', data);
     });
     
