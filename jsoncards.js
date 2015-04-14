@@ -90,6 +90,15 @@ allCards = [{
     attack: 5,
     defense: 10,
     text: 'When Daiyousei enters the battlefield, creatures you control heal 7 health.\n(1): Target creature heals 5 health.  Use this ability only once each turn.\n            ',
+    special: {
+        "etb": function() {
+            var AMOUNT_TO_HEAL = 7;
+            
+            this.owner.creatures.forEach(function (creature) {
+                creature.heal(AMOUNT_TO_HEAL);
+            });
+        }
+    },
 },{
     name: 'Demon Binding Array',
     image: 'http://puu.sh/7V1ET.png',
@@ -124,14 +133,24 @@ allCards = [{
     text: 'At the end of your turn, creatures you control heal 10 health.\nWhenever a creature you control heals, that creature gets +2/+3.\n',
     special: {
         "end": function() {
-                    var DAMAGE_HEALED = 10;
-                    
-                    this.creatures.forEach(function (creature) {
-                        creature.heal(DAMAGE_HEALED);
-                        events.trigger("creatureHeal", creature, DAMAGE_HEALED);
-                    });
-               }
-    }
+            var AMOUNT_TO_HEAL = 10;
+            
+            this.owner.creatures.forEach(function (creature) {
+                creature.heal(AMOUNT_TO_HEAL);
+            });
+       }
+    },
+    
+    onCreatureHeal: function(creatureHealed, amount) {
+        var ATTACK_INCREASE = 2;
+        var HP_INCREASE = 3;
+        
+        creatureHealed.atk += ATTACK_INCREASE;
+        creatureHealed.maxHP += HP_INCREASE;
+        creatureHealed.HP += HP_INCREASE;
+        var changes = {atk: creatureHealed.atk, maxHP: creatureHealed.maxHP, HP: creatureHealed.HP};
+        events.trigger("updateCreature", [creatureHealed, changes]);
+    },
 },{
     name: 'Evil Sealing Circle',
     image: 'http://i.imgur.com/fuduoi4.jpg',
@@ -252,8 +271,8 @@ allCards = [{
     special:{
         "upkeep": function(){
             GAME.promptResourcePayment("You may pay (2) to draw another card.", 2, this.controller,
-                function() {this.controller.draw(1);},
-            this, false);
+                function(pointsPaid, powerPaid) {this.controller.draw(1);},
+                this, false, false);
             return true;
         }
     },
@@ -281,7 +300,7 @@ allCards = [{
     attack: 12,
     defense: 35,
     text: 'Whenever a creature takes damage, Konnagara gets +1/+0.',
-    onCreatureDamage: function(creatureDamaged, amount) {
+    onCreatureDamage: function(source, creatureDamaged, amount) {
         this.atk++;
         var attackChangeObj = {atk: this.atk};
         events.trigger("updateCreature", [this, attackChangeObj]);
@@ -295,16 +314,20 @@ allCards = [{
     defense: 27,
     text: 'Put the top card of your deck into your graveyard: Kurumi heals 5 health. You may only use this ability once each turn.\nWhen Kurumi takes damage, she gains attack equal to half the health she lost, rounded down.\n            ',
     
-    /*
-    var origTakeDamage = takeDamage;
     takeDamage: function (source, amount) {
-        var damage = origTakeDamage.call(this, source, amount);
+        var damage = Math.floor(GAME.modifyDamage(source, this, amount));
         var INCREASE_ATTACK_RATE = 0.5;
-        
+    
+        this.HP -= damage;
+        events.trigger("creatureDamage", [this, damage]);
         if (damage > 0) {
             this.atk += Math.floor(damage * INCREASE_ATTACK_RATE);
         }
-    },*/
+        if (this.HP <= 0)
+            this.die();
+        
+        return damage;
+    },
 },{
     name: 'Letty',
     image: 'http://i.imgur.com/4Btmqxo.jpg',
@@ -394,10 +417,12 @@ allCards = [{
         "die": function(){
                     var ON_DEATH_DAMAGE = this.atk;
                     
-                    this.controller.creatures.forEach(function (creature) {
-                                        creature.takeDamage(ON_DEATH_DAMAGE);
-                                        //events.trigger("creatureDamage", creature, creature.takeDamage(ON_DEATH_DAMAGE));
-                                   });
+                    GAME.players[0].creatures.forEach(function (creature) {
+                  //      creature.takeDamage(this, ON_DEATH_DAMAGE);
+                    });
+                    GAME.players[1].creatures.forEach(function (creature) {
+                  //      creature.takeDamage(this, ON_DEATH_DAMAGE);
+                    });
                     return true;
                }
     },
@@ -420,17 +445,16 @@ allCards = [{
                 var MAX_DAMAGE = 22;
                 
                 GAME.chooseTarget(function(target) {
-                                    var damage;
-                                    if (target.HP == target.maxHP) {
-                                        damage = GAME.damageFromSpell(DAMAGE);
-                                    }
-                                    else {
-                                        damage = GAME.damageFromSpell(MAX_DAMAGE);
-                                    }
-                                    this.dealDamage(target, damage);
-                                    events.trigger("creatureDamage", target, damage); 
-                                  },
-                                  GAME.findCreature(), this);
+                        var damage;
+                        if (target.HP >= target.maxHP) {
+                            damage = DAMAGE;
+                        }
+                        else {
+                            damage = MAX_DAMAGE;
+                        }
+                        this.dealDamage(target, damage);
+                    },
+                    GAME.findCreature(), this);
             },
 },{
     name: 'Mystia',
@@ -446,6 +470,10 @@ allCards = [{
     type: 'Field',
     cost: 6,
     text: 'If a source would deal damage, it deals double that damage instead.\nPay 20 life: Destroy Nuclear Furnace.  Any player may use this ability.\n            ',
+    alterDamageFunction: function(source, target, targetID, amount) {
+        return amount * 2;
+    },
+    alterDamageFunctionType: "*",
 },{
     name: 'Patchouli',
     image: 'http://i.imgur.com/hzzlXJL.jpg',
@@ -488,6 +516,11 @@ allCards = [{
     attack: 20,
     defense: 55,
     text: 'When Reimu enters the battlefield, create a 20/20 Orb token linked to Reimu that has "As long as this creature is linked, it cannot be affected by other cards\' abilities except for the linked creature. This creature cannot be damaged. When the linked creature leaves the battlefield, sacrifice this creature."\n             If a spell or ability would destroy or exile Reimu, if Reimu is linked, sacrifice the linked orb and negate that spell or ability.\n(0): The linked orb cannot be intercepted until end of turn. Reimu cannot attack and use this ability within the same turn.',
+    special: {
+        "etb": function () {
+            this.controller.addToCreatures(CardUtils.createCard("Orb"));
+        }
+    },
 },{
     name: 'Reisen',
     image: 'http://i.imgur.com/Ir2sO0c.jpg',
@@ -504,6 +537,12 @@ allCards = [{
     attack: 24,
     defense: 35,
     text: 'After combat, Remilia heals health equal to a quarter of the damage she dealt, rounded up.',
+    onCreatureDamage: function(source, creatureDamaged, amount) {
+        var LIFESTEAL_RATE = 0.25;
+        
+        if (source.id == this.id)
+            this.heal(Math.ceil(amount * LIFESTEAL_RATE));
+    },
 },{
     name: 'Rika',
     image: 'http://i.imgur.com/hyCkqxF.png',
@@ -620,8 +659,8 @@ allCards = [{
         "end": function() {
             var DAMAGE_HEALED = 10;
             
-            if (this.attackCount == 0) this.heal(DAMAGE_HEALED);
-            events.trigger("creatureHeal", this, DAMAGE_HEALED);
+            if (this.attackCount == 0)
+                this.heal(DAMAGE_HEALED);
         }
     },
 },{
@@ -668,6 +707,11 @@ allCards = [{
     attack: 30,
     defense: 45,
     text: 'Unzan cannot attack the turn he enters the battlefield.\n            After combat, Unzan cannot attack or intercept until the end of the next turn.',
+    special: {
+        "etb": function () {
+            this.disableAttack(1);
+        }
+    },
 },{
     name: 'Utsuho',
     image: 'http://i.imgur.com/nmjKIpr.jpg',
@@ -684,9 +728,9 @@ allCards = [{
     text: 'Target creature cannot intercept this turn.  ',
     effect: function() {
                 GAME.chooseTarget(function(target) {
-                                    target.intercepts = target.maxIntercepts;
-                                  },
-                                  GAME.findCreature(), this);
+                        target.disableIntercept(1);
+                    },
+                    GAME.findCreature(), this);
             },
 },{
     name: 'War Sign "Little Legion"',
@@ -698,11 +742,10 @@ allCards = [{
                 var DAMAGE_PER_CREATURE = 7;
                 
                 GAME.chooseTarget(function(target) {
-                                    var damage = GAME.damageFromSpell(DAMAGE_PER_CREATURE * this.controller.creatures.length);
-                                    this.dealDamage(target, damage);
-                                    events.trigger("creatureDamage", target, damage);
-                                  },
-                                  GAME.findCreature(), this);
+                        var damage = DAMAGE_PER_CREATURE * this.controller.creatures.length;
+                        this.dealDamage(target, damage);
+                    },
+                    GAME.findCreature(), this);
             },
 },{
     name: 'Wind Sign "Tengu Newspaper Deadline Day"',
@@ -730,6 +773,19 @@ allCards = [{
     attack: 5,
     defense: 15,
     text: 'When Wriggle enters the battlefield, you may pay up to 3 additional resources. If you do, create that many 5/5 bug tokens.',
+    special: {
+        "etb": function() {
+            GAME.promptResourcePayment("You may pay up to (3) to create that many 5/5 Bug tokens.", 3, this.controller,
+                function(pointsPaid, powerPaid) {
+                    for (var i = 0; i < pointsPaid + powerPaid; i++) {
+                        this.controller.addToCreatures(CardUtils.createCard("Bug"));
+                    }
+                    events.trigger("resource", this.owner);
+                },
+                this, false, true);
+            return true;
+        }
+    },
 },{
     name: 'Yamame',
     image: 'http://i.imgur.com/Jq0Iu8c.jpg',
@@ -784,15 +840,27 @@ allCards = [{
         var damage = Math.floor(GAME.modifyDamage(source, this, amount));
         
         this.HP -= damage;
-        if (this.HP <= 0)
-            this.die();
-        else if (this.HP < oldHP) {
+        events.trigger("creatureDamage", [this, damage]);
+        if (damage > 0) {
             this.atk += ATTACK_TO_INCREASE;
         }
-        //events.trigger("creatureDamage", [this, damage]);
+        if (this.HP <= 0)
+            this.die();
         
         return damage;
     },
+    
+    alterDamageFunction: function(source, target, targetID, amount) {
+        var DAMAGE_TO_PREVENT = 5;
+        
+        var modifiedDamage = amount;
+        
+        if (target.id == targetID)
+            modifiedDamage -= DAMAGE_TO_PREVENT;
+        
+        return modifiedDamage;
+    },
+    alterDamageFunctionType: "-",
 },{
     name: 'Yuuka',
     image: 'http://i.imgur.com/G3tsKAG.jpg',

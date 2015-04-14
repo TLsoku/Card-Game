@@ -17,6 +17,45 @@ function Card(original, id) { //Object to represent a card.  Pass in the origina
     this.id = id || Card.cardInitCount;
     this.owner; //Stores the owner of the card, valid regardless of where the card is
     GAME.cards.push(this);
+    
+    if (original.alterDamageFunction) {
+        this.altersDamage = true;
+        this.alterDamageFunction = function(source, target, targetID, amount) {
+            return original.alterDamageFunction(source, target, targetID, amount);
+        }
+        this.alterDamageFunctionType = original.alterDamageFunctionType;
+        
+        this.alterDamageFunction.targetID = this.id;
+        this.alterDamageFunction.type = this.alterDamageFunctionType;
+        this.alterDamageFunction.ID = this.id;
+    }
+}
+
+// Removes the card's alterDamageFunction from GAME's list
+// should be called on any LTB: death, exile, etc.
+Card.prototype.removeAlterDamageFunction = function () {
+    if (this.altersDamage) {
+        var creatureID = this.id;
+        var funcIndex = 0;
+        var alterDamageFunction = this.alterDamageFunction;
+    
+        if (this.controller == GAME.players[0]) {
+            GAME.alterDamageFunctionList.forEach (function (func) {
+                if (func == alterDamageFunction && func.ID == creatureID) {
+                    GAME.alterDamageFunctionList.splice(funcIndex, 1);
+                }
+                funcIndex++;
+            });
+        }
+        else if (this.controller == GAME.players[1]) {
+            GAME.alterDamageOpponentFunctionList.forEach (function (func) {
+                if (func == alterDamageFunction && func.ID == creatureID) {
+                    GAME.alterDamageOpponentFunctionList.splice(funcIndex, 1);
+                }
+                funcIndex++;
+            });
+        }
+    }
 }
 
 // Placeholder for being able to concatenate cards with strings or console.log(card)
@@ -59,6 +98,11 @@ Card.prototype.clickInHand = function(callback){
     }
 }
 
+// default for now, any creature/field can override this if necessary though
+Card.prototype.alterDamageFunction = function(source, target, targetID, amount) {
+    return amount;
+}
+
 //TODO: Was considering adding triggers like this, but decided on another way to do it.  Still in here just in case I need to go back to this old way
 /*Card.prototype.addTriggers = function(){
     var t = this;
@@ -78,28 +122,31 @@ Card.cardInitCount = 0;
 
 function Spell(original){
     Card.call(this, original);
-    //this.effect = original.effect;
-
+    
     //TODO: Implement spells.  For now, TESTING: MOST SPELLS ARE A TEST SPELL
     this.text = "Deal 20 damage to target creature.";
-    this.effect = function() {GAME.chooseTarget(function(target) {this.dealDamage(target, 20);}, GAME.findCreature(), this);};
+    this.effect = function() {
+        GAME.chooseTarget(function(target) {
+            this.dealDamage(target, 20);
+        },
+        GAME.findCreature(), this);
+    };
     
     if (original.text) this.text = original.text;
-    if (original.effect) {
-        this.effect = original.effect;
-    }
+   // if (original.effect) this.effect = original.effect;
 }
 
 Spell.prototype = Object.create(Card.prototype);
 
 Spell.prototype.play = function() {
+    this.state = "graveyard";
+    events.trigger("log", this.owner.name + " played a " + this.name + "(" + this.id + ").");
     this.effect();
-    events.trigger("log", "Played a " + this.name);
 }
 
 Spell.prototype.dealDamage = function(target, amount) {
     if (target instanceof Creature) {
-        target.takeDamage(GAME.damageFromSpell(amount));
+        target.takeDamage(this, amount);
     }
 }
 
@@ -120,6 +167,15 @@ Field.prototype.play = function() {
     events.trigger("log", this.owner.name + " played a " + this.name);
     if (this.func["play"])
         this.func["play"].call(this);
+    
+    // If this field has an alterDamage function, we add it to the list
+    // we know the active player controls the field because this function
+    // is only called when the active player plays a field.
+    // If the opponent plays a field, then we only know from socket updates
+    // (that is, it just enters the battlefield from another function)
+    if (this.altersDamage) {
+        GAME.alterDamageFunctionList.push(this.alterDamageFunction);
+    }
 }
 
 // Returns a function that controls what happens to the field during an event.
@@ -151,11 +207,17 @@ function Creature(original, id) { //Object to represent a single Creature in the
     this.maxHP = original.defense;
     this.HP = original.defense;
     this.atk = original.attack;
+    
     this.attackCount = 0; //How many times the creature has attacked this turn.  Resets every turn.
     this.maxAttacks = 1;
+    this.canAttackRestrictions = [];
+    
     this.interceptCount = 0;
     this.maxIntercepts = 1;
+    this.canInterceptRestrictions = [];
     this.interceptDamageRate = 0.5;
+    
+    this.freezeList = [];
     
     // merge the original creature with this one after the default values are set
     // so that any manually edited values (eg. different maxIntercepts count) are merged properly
@@ -165,17 +227,29 @@ function Creature(original, id) { //Object to represent a single Creature in the
     if (original.onCreatureDamage) this.onCreatureDamage = original.onCreatureDamage;
     if (original.maxIntercepts) this.maxIntercepts = original.maxIntercepts;
     if (original.interceptDamageRate) this.interceptDamageRate = original.interceptDamageRate;
+    if (original.maxAttacks) this.maxAttacks = original.maxAttacks;
+    if (original.onCreatureHeal) this.onCreatureHeal = original.onCreatureHeal;
 }
 
 Creature.prototype = Object.create(Card.prototype); //Inheriting line
 
+// Determines if the creature can attack
+Creature.prototype.canAttack = function () {
+    return (this.canAttackRestrictions.length == 0) && (this.attackCount < this.maxAttacks) && (this.freezeList.length == 0);
+}
+
+// Determines if the creature can intercept
+Creature.prototype.canIntercept = function () {
+    return (this.canInterceptRestrictions.length == 0) && (this.interceptCount < this.maxIntercepts) && (this.freezeList.length == 0);
+}
+
 // Creature takes damage (modified through GAME)
 // returns the amount of damage actually dealt to the Creature
 Creature.prototype.takeDamage = function(source, amount) {
-    var oldHP = this.HP;
-    var damage = Math.floor(GAME.modifyDamage(source, this, amount));
+    var damage = Math.max (0, Math.floor(GAME.modifyDamage(source, this, amount)));
     
     this.HP -= damage;
+    events.trigger("creatureDamage", [source, this, damage]);
     if (this.HP <= 0)
         this.die();
     
@@ -184,23 +258,26 @@ Creature.prototype.takeDamage = function(source, amount) {
 
 Creature.prototype.heal = function(amount) {
     var beforeHealLife = this.HP;
-    var afterHealLife = Math.min(this.maxHP, this.HP += GAME.healToCreature(amount));
+    var afterHealLife = Math.min(this.maxHP, this.HP += amount);
     this.HP = afterHealLife;
     
     // note this is different from takeDamage because a creature can take any amount of damage, but a creature
     // can only be healed up to its maximum health (and thus would be considered as that much heal)
-    events.trigger("creatureHeal", this, afterHealLife - beforeHealLife);
+    events.trigger("creatureHeal", [this, afterHealLife - beforeHealLife]);
 }
 
 // this is blank, but each individual creature may have a special function
 // to call when ANY creature is damaged (which is used on creatureDamage event)
 // TODO: add source of damage/heal
-Creature.prototype.onCreatureDamage = function(creatureDamaged, amount) {
+Creature.prototype.onCreatureDamage = function(source, creatureDamaged, amount) {
 }
 Creature.prototype.onCreatureHeal = function(creatureHealed, amount) {
 }
 
 Creature.prototype.die = function() {
+    // Remove alterDamageFunction if it had one
+    this.removeAlterDamageFunction();
+    
     if (this.func["die"] != undefined){  //Has a special death function which should specify eventual state and other things
         events.trigger("log", this.name + " had a special death");
         this.state = this.func["die"].call(this) || "graveyard"; //Special death function can return a state for the creature to be in (eg: kaguya)
@@ -214,11 +291,59 @@ Creature.prototype.die = function() {
     events.trigger("died", this.id);
 }
 
-Creature.prototype.play = function(){
+Creature.prototype.etb = function(){
     this.state = "board";
-    events.trigger("log", this.owner.name + " played a " + this.name);
-    if (this.func["play"])
-        this.func["play"].call(this);
+    events.trigger("log", this.owner.name + " played a " + this.name + "(" + this.id + ").");
+    if (this.func["etb"])
+        this.func["etb"].call(this);
+    
+    // If this creature has an alterDamage function, we add it to the list
+    // we know the active player controls the creature because this function
+    // is only called when the active player plays a creature.
+    // If the opponent plays a creature, then we only know from socket updates
+    // (that is, it just enters the battlefield from another function)
+    if (this.altersDamage) {
+        GAME.alterDamageFunctionList.push(this.alterDamageFunction);
+    }
+}
+
+Creature.prototype.disableAttack = function (turns) {
+    var currentTurnNumber = GAME.turnNumber;
+    var thisCreature = this;
+    
+    this.canAttackRestrictions.push(this.id);
+    
+    events.one("turn", function(e, turnNumber) {
+        if (turnNumber >= currentTurnNumber + turns) {
+            thisCreature.canAttackRestrictions = _.without(thisCreature.canAttackRestrictions, thisCreature.id);
+        }
+    });
+}
+
+Creature.prototype.disableIntercept = function (turns) {
+    var currentTurnNumber = GAME.turnNumber;
+    var thisCreature = this;
+    
+    this.canInterceptRestrictions.push(this.id);
+    
+    events.one("turn", function(e, turnNumber) {
+        if (turnNumber >= currentTurnNumber + turns) {
+            thisCreature.canInterceptRestrictions = _.without(thisCreature.canInterceptRestrictions, thisCreature.id);
+        }
+    });
+}
+
+Creature.prototype.freeze = function (turns) {
+    var creatureTurnNumber = GAME.turnNumber;
+    var thisCreature = this;
+    
+    this.freezeList.push(this.id);
+    
+    events.one("turn", function(e, turnNumber) {
+        if (turnNumber >= currentTurnNumber + turns) {
+            thisCreature.freezeList = _.without(thisCreature.freezeList, thisCreature.id);
+        }
+    });
 }
 
 /*

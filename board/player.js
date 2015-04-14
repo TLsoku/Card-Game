@@ -191,7 +191,7 @@ Player.prototype.playCreature = function(id) {
         this.points -= card.cost;
         this.removeFromHand(card);
         this.addToCreatures(card);
-        card.play();
+        card.etb();
         events.trigger("resource", this);
         return true;
     }
@@ -236,7 +236,8 @@ Player.prototype.playField = function(id, callback) {
     {
         GAME.promptChoice("Play " + card.name + " with points or power? (Costs " + card.cost + ")", {
             "Point": function() {this.points -= card.cost; playingField(card);},
-            "Power": function() {this.power -= card.cost; playingField(card);}
+            "Power": function() {this.power -= card.cost; playingField(card);},
+            "Cancel": function() {}
         }, this);
     }
     else
