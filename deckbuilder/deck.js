@@ -28,9 +28,24 @@ function prepList(list){
     var searchTerm = $('#filters input[type="text"]').val();
     if (searchTerm)
         filteredList = _.filter(filteredList, function(c) {
-        // Regex to filter cards based on name.  The typed string will match the
-        //  starts of words in the card's name (eg: 'maid' matches 'fairy maid'
-            return c.name.match(new RegExp('(?:^|\\s|\")' + searchTerm, 'i'));
+            
+            var searchElement = document.getElementById("searchtype");
+            var searchType = searchElement.options[searchElement.selectedIndex].text;
+            
+            switch (searchType) {
+                case('Card Name'):
+                    // Regex to filter cards based on name.  The typed string will match the
+                    //  starts of words in the card's name (eg: 'maid' matches 'fairy maid')
+                    return c.name.match(new RegExp('(?:^|\\s|\")' + searchTerm, 'i'));
+                    break;
+                case ('Card Text'):
+                    // Regex to filter cards based on text.  The typed string will match the
+                    //  starts of words in the card's text (eg: 'fairy' gives 'rin')
+                    return c.text.match(new RegExp('(?:^|\\s|\")' + searchTerm, 'i'));
+                    break;
+                default:
+                    break;
+            }
         });
 
     // Pick just the card names out of the list for proper tiling
