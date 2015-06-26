@@ -52,7 +52,7 @@ Player.prototype.upkeep = function(){
     this.points += this.pointEssences.length;
     this.power += this.powerEssences.length;
 
-    if (this.creatures) this.creatures.forEach(function(c) {c.attackCount = 0; c.intercepts = 0;});
+    if (this.creatures) this.creatures.forEach(function(c) {c.attackCount = 0; c.interceptCount = 0;});
     events.trigger("event", "upkeep");
 
     this.draw(1);
@@ -191,7 +191,7 @@ Player.prototype.playCreature = function(id) {
         this.points -= card.cost;
         this.removeFromHand(card);
         this.addToCreatures(card);
-        card.play();
+        card.etb();
         events.trigger("resource", this);
         return true;
     }
@@ -236,7 +236,8 @@ Player.prototype.playField = function(id, callback) {
     {
         GAME.promptChoice("Play " + card.name + " with points or power? (Costs " + card.cost + ")", {
             "Point": function() {this.points -= card.cost; playingField(card);},
-            "Power": function() {this.power -= card.cost; playingField(card);}
+            "Power": function() {this.power -= card.cost; playingField(card);},
+            "Cancel": function() {}
         }, this);
     }
     else
@@ -254,11 +255,12 @@ Player.prototype.attack = function(attacker, target){
     events.trigger("log", "Attacking " + target.name + " with " + attacker.name);
     events.one("intercept", function(event, interceptor){
         if (!interceptor){ //They chose not to intercept
-            attacker.fight(target);
+            // attacker.fight(target);
         }
         else {
-            attacker.fight(interceptor);
+            // attacker.fight(interceptor);
         }
+        GAME.fight(attacker, target, interceptor);
     });
 }
 

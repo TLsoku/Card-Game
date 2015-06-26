@@ -2,7 +2,8 @@
 var socket = io.connect();
 
 socket.on('turn', function(data) {
-    alert("your turn");
+    GAME.turnNumber = data;
+    alert("your turn: " + GAME.turnNumber);
     GAME.yourTurn = true;
     GAME.players[0].turn.start();
 });
@@ -12,8 +13,13 @@ socket.on('stats', function(data) {Display.updatePlayerStats(data);});
 socket.on('addToBoard', function(card, id) {
     console.log(card + " -- " + id);
     var card = CardUtils.createCard(card, id);
+    card.owner = GAME.players[1];
     card.controller = GAME.players[1];
     Display.addToBoard(card, false);
+    
+    if (card.altersDamage) {
+        GAME.alterDamageOpponentFunctionList.push(card.alterDamageFunction);
+    }
 });
 
 socket.on('event', function(type){
@@ -33,27 +39,35 @@ socket.on('attack', function(a, t){
 
     GAME.chooseTarget(function(interceptor){
         if (interceptor == target){
-            socket.emit('combat', {intercept: false, attackerID: attacker.id, targetID: target.id});
-            target.fight(attacker);
+            socket.emit('combat', {attackerID: attacker.id, targetID: target.id, interceptorID: false});
+            GAME.fight(attacker, target, false);
+            Display.updateCreatureStats(target);
         }
         else {
-            interceptor.intercept(attacker);
-            socket.emit('combat', {intercept: true, attackerID: attacker.id, targetID: interceptor.id});
+            socket.emit('combat', {attackerID: attacker.id, targetID: target.id, interceptorID: interceptor.id});
+            GAME.fight(attacker, target, interceptor);
+            Display.updateCreatureStats(interceptor);
         }
         Display.updateCreatureStats(attacker);
-        Display.updateCreatureStats(interceptor);
-    }, GAME.findInterceptor(), attacker);
+    }, GAME.findInterceptor(target), attacker);
 });
 
 socket.on('combat', function(data) {
     var attacker = GAME.getCardByID(data.attackerID);
     var target = GAME.getCardByID(data.targetID);
-    if (data.intercept)
-        target.intercept(attacker);
-    else
-        target.fight(attacker);
+    
+    if (data.interceptorID) {
+        var interceptor = GAME.getCardByID(data.interceptorID);
+        GAME.fight(attacker, target, interceptor);
+        Display.updateCreatureStats(interceptor);
+    }
+    else {
+        GAME.fight(attacker, target, false)
+        Display.updateCreatureStats(target);
+    }
     Display.updateCreatureStats(attacker);
-    Display.updateCreatureStats(target);
+    
+    events.trigger("log", "TEST HP AFTER SOCKET.COMBAT: " + attacker.HP);
 });
 
 socket.on('updateCreature', function(id, changes) {
@@ -79,32 +93,36 @@ function statsChanged(stats){
 // Whenever a creature is damaged, run through all creatures on the board and
 // call their "onCreatureDamage"  method which is the special actions they need
 // to take whenever any creature is damaged
-events.on('creatureDamage', function(e, creatureDamaged, amount) {
-    GAME.players[0].creatures.forEach(function (creature) {
-        if (creature.onCreatureDamage) {
-            creature.onCreatureDamage(creatureDamaged, amount);
-        }
-    });
-    GAME.players[1].creatures.forEach(function (creature) {
-        if (creature.onCreatureDamage) {
-            creature.onCreatureDamage(creatureDamaged, amount);
-        }
-    });
-    events.trigger("updateCreature", [creatureDamaged, {HP: creatureDamaged.HP}]);
+events.on('creatureDamage', function(e, source, creatureDamaged, amount) {
+    if (amount > 0) {
+        GAME.players[0].creatures.forEach(function (creature) {
+            if (creature.onCreatureDamage) {
+                creature.onCreatureDamage(source, creatureDamaged, amount);
+            }
+        });
+        GAME.players[1].creatures.forEach(function (creature) {
+            if (creature.onCreatureDamage) {
+                creature.onCreatureDamage(source, creatureDamaged, amount);
+            }
+        });
+        events.trigger("updateCreature", [creatureDamaged, {HP: creatureDamaged.HP}]);
+    }
 });
 
 events.on('creatureHeal', function(e, creatureHealed, amount) {
-    GAME.players[0].creatures.forEach(function (creature) {
-        if (creature.onCreatureHeal) {
-            creature.onCreatureHeal(creatureHealed, amount);
-        }
-    });
-    GAME.players[1].creatures.forEach(function (creature) {
-        if (creature.onCreatureHeal) {
-            creature.onCreatureHeal(creatureHealed, amount);
-        }
-    });
-    events.trigger("updateCreature", [creatureHealed, {HP: creatureHealed.HP}]);
+    if (amount > 0) {
+        GAME.players[0].creatures.forEach(function (creature) {
+            if (creature.onCreatureHeal) {
+                creature.onCreatureHeal(creatureHealed, amount);
+            }
+        });
+        GAME.players[1].creatures.forEach(function (creature) {
+            if (creature.onCreatureHeal) {
+                creature.onCreatureHeal(creatureHealed, amount);
+            }
+        });
+        events.trigger("updateCreature", [creatureHealed, {HP: creatureHealed.HP}]);
+    }
 });
 
 //Sends a signal to other player to update the board when new cards appear on it
@@ -153,7 +171,10 @@ events.on('died', function(e, id) {
 function endTurn(){
     GAME.players[0].turn.end();
     GAME.yourTurn = false;
-    socket.emit('turn', 1);
+    GAME.turnNumber++;
+    events.trigger("event", "end");
+    events.trigger("turn", GAME.turnNumber);
+    socket.emit('turn', GAME.turnNumber);
 }
 
 //------------- The Display, how things look on the screen and control of visual aspects ----
@@ -181,7 +202,10 @@ var Display = {
                     if (!card.owner.turn.active) return false;
                     var playedSuccess = false;
                     var that = this;
-                    card.clickInHand(function(){console.log(that); t.removeFromHand(that);});
+                    card.clickInHand(function(){
+                        console.log(that);
+                        t.removeFromHand(that);
+                    });
 /*
                     //Play as an essence
                     if (e.ctrlKey) playedSuccess = card.owner.playAsPoint(card.id);
@@ -211,7 +235,7 @@ var Display = {
             .find("img").attr("src", card.image);
         if (player) { //You can only use your own creatures to attack or use abilities
             card.div.click(function(e){
-               if (GAME.yourTurn && card.attackCount < card.maxAttacks) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
+               if (GAME.yourTurn && card.canAttack()) GAME.chooseTarget(function(target){card.controller.attack(this, GAME.getCardByID(target.id));}, GAME.findOppCreature(), card);
             });
         }
         
@@ -295,24 +319,12 @@ var Display = {
 //------------- The GAME object, stores general data (players, cards) and provides game related utility ----
 
 var GAME = {
+    turnNumber: 0,
     cards: [],
     players: [],
     yourTurn: false,
-    damageToCreatureRate: 1.0,
-    damageToCreatureFlat: 0.0,
-    damageFromCreatureRate: 1.0,
-    damageFromCreatureFlat: 0.0,
-    damageFromSpellRate: 1.0,
-    damageFromSpellFlat: 0.0,
-    damageToPlayerRate: 1.0,
-    damageToPlayerFlat: 0.0,
-    
-    healToCreatureRate: 1.0,
-    
-    // these are arrays of creatures that we call their special function
-    // whenever a certain "general" event occurs
-    // eg. "Whenever a creature is dealt damage" or "Whenever a creature dies"
-    whenCreatureDies: [],
+    alterDamageFunctionList: [],
+    alterDamageOpponentFunctionList: [],
     
     init: function() {
         if (!(localStorage['My deck'])) { //TODO: Let them load a deck of their choice
@@ -341,39 +353,90 @@ var GAME = {
         // Add a second player (opponent) but don't give him any stats yet
         this.players.push(new Player());
     },
-
-    // These functions determine how much damage are dealt from creatures/spells to creatures/players
+        
+    // EXTREMELY IMPORTANT:
+    // All damage dealt in the game must be filtered through this function first.
+    // This is basically all done in Creature.takeDamage (TODO: player takes damage).
+    // This function modifies damage from source to target using all the
+    // damage-modifying functions in alterDamageFunctionList, which is basically
+    // every effect that affects damage on the board.
     //
-    // Examples:
-    // "Creatures deal 2x damage" would modify damageFromCreatureRate
-    // "Creatures take 2x damage" would modify damageToCreatureRate
-    // "All damage is doubled" would modify damageRate
-    // "Whenever a spell deals damage, it deals 5 more damage" would modify damageFromSpellFlat
-    //
-    // NOTE: damageRate is only calculated when to a creature or player, so that they are not
-    //       double-counted when calculating from a creature or spell
-    //
-    // TODO: Implement calculations of Flat constants. However, to do so, need to
-    //       first implement order of operations (aka stack). I also think we'll
-    //       eventually need even more of these, like "damageFromCreatureToPlayer"
-    //       eg. "Whenever a creature deals damage to a player, 4x damage!!"
+    // Example function that could be in the list:
+    // f : (source, target, targetID, amount) {
+    //      if someCondition
+    //          amount = amount + 5;
+    //      return amount;
+    // }
+    modifyDamage: function(source, target, amount) {
+        var modifiedDamage = amount;
+        
+        // each function in this list may possibly
+        // affect how much damage is actually done
+        var types = ["+", "-"];
+        
+        types.forEach(function (type) {
+            GAME.alterDamageFunctionList.forEach(function (func) {
+                if (func.type == type) {
+                    modifiedDamage = func(source, target, func.targetID, modifiedDamage);
+                }
+            });
+        });
+        types.forEach(function (type) {
+            GAME.alterDamageOpponentFunctionList.forEach(function (func) {
+                if (func.type == type) {
+                    modifiedDamage = func(source, target, func.targetID, modifiedDamage);
+                }
+            });
+        });
+        
+        types = ["*", "/"];
+        
+        types.forEach(function (type) {
+            GAME.alterDamageFunctionList.forEach(function (func) {
+                if (func.type == type) {
+                    modifiedDamage = func(source, target, func.targetID, modifiedDamage);
+                }
+            });
+        });
+        types.forEach(function (type) {
+            GAME.alterDamageOpponentFunctionList.forEach(function (func) {
+                if (func.type == type) {
+                    modifiedDamage = func(source, target, func.targetID, modifiedDamage);
+                }
+            });
+        });
+        
+        return modifiedDamage;
+    },
     
-    damageToCreature: function(amount) {
-        return amount * this.damageToCreatureRate;
-    },
-    damageFromCreature: function(amount) {
-        return amount * this.damageFromCreatureRate;
-    },
-    damageFromSpell: function(amount) {
-        return amount * this.damageFromSpellRate;
-    },
-    damageToPlayer: function(amount) {
-        return amount * this.damageToPlayerRate;
-    },
-    
-    
-    healToCreature: function(amount) {
-        return amount * this.healToCreatureRate;
+    // attacker: Creature that initiated the fight
+    // target: Creature that the attacker chose to attack
+    // interceptor: Creature that intercepted the attacker
+    fight: function(attacker, target, interceptor) {
+        // Sometimes, taking damage affects the creatures' attack.
+        // Example: "Whenever this creature is dealt damage, it gets +5/+0."
+        // Since both creatures are supposed to deal damage at the same time,
+        // save their old attack value so it can't change as we deal damage
+        // one at a time.
+        var currentAttack = attacker.atk;
+        
+        if (!interceptor) { // no intercept
+            var oppAttack = target.atk;
+        
+            events.trigger("log", attacker.name + "(" + attacker.id + ") attacks " + target.name + "(" + target.id + ")!");
+        
+            attacker.takeDamage(target, oppAttack);
+            target.takeDamage(attacker, currentAttack);
+        }
+        else { // interceptor exists
+            var oppAttack = interceptor.atk;
+        
+            events.trigger("log", interceptor.name + "(" + interceptor.id + ") intercepts " + attacker.name + "(" + attacker.id + ")!");
+            interceptor.interceptCount ++;
+            
+            attacker.takeDamage(interceptor, oppAttack * interceptor.interceptDamageRate);
+            interceptor.takeDamage(attacker, currentAttack);
+        }
     },
     
     // Prompt the player to choose a target and call the callback function on the chosen target
@@ -427,13 +490,14 @@ var GAME = {
         }
     })(),
 
-    // Makes a prompt to pay resources for an ability (points and power), has 6 arguments
+    // Makes a prompt to pay resources for an ability (points and power), has 7 arguments
     // First is the text for the prompt
     // Second is the cost of the ability
     // Third is the player who is paying for the ability
-    // Fourth is a function that will be called if the payment is completed
+    // Fourth is a function that will be called if the payment is completed. It must take two parameters, pointsPaid and powerPaid
     // Fifth is the context (value of this) within the called function.
     // Sixth is purity, true = can only pay with 1 resource, false = can pay with mix of both resources
+    // Seventh is flexibility, true = can pay up to the cost, false = can only pay the cost
     promptResourcePayment: (function() {
 
         // TODO: CSS should be separated from these choice boxes instead of inline
@@ -453,22 +517,23 @@ var GAME = {
 
         $paymentBox.append($paymentText).append($paymentRow).append($buttonsRow);
 
-        return function(text, cost, player, effect, context, purity) {
+        return function(text, cost, player, effect, context, purity, flexibility) {
 
             $("#shader").css("display", "block");
             $paymentText.html(text);
 
             $confirmButton.click(function() {
                 var pointsPaid = parseInt($payPoints.val(), 10);
-                var powerPaid = parseInt($payPower.val(),10);
-                if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power && pointsPaid + powerPaid == cost) {
-                    
+                var powerPaid = parseInt($payPower.val(), 10);
+                if (pointsPaid <= player.points && pointsPaid >= 0 && powerPaid >= 0 && powerPaid <= player.power &&
+                   // flexibility check
+                   (pointsPaid + powerPaid == cost || (flexibility && pointsPaid + powerPaid <= cost)) && 
                     // purity check
-                    if (!purity || pointsPaid == cost || powerPaid == cost)
+                   (!purity || pointsPaid == cost || powerPaid == cost)) {
                     {
                         player.points -= pointsPaid;
                         player.power -= powerPaid;
-                        effect.call(context);
+                        effect.call(context, pointsPaid, powerPaid);
                         $("#shader").css("display", "none");
                         $paymentBox.remove();
                         events.trigger("madeChoice");
@@ -551,8 +616,8 @@ var GAME = {
     },
 
     // Finds creatures you control that are capable of intercepting
-    findInterceptor: function(){
-        return this.findTargets(this.players[0].creatures, function(c) {return c.intercepts < c.maxIntercepts;});
+    findInterceptor: function(target){
+        return this.findTargets(this.players[0].creatures, function(c) {return c.canIntercept() || c == target;});
     },
 
     // Finds creatures, can pass in a function to filter further
