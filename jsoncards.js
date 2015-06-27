@@ -5,7 +5,7 @@ allCards = [{
     cost: 5,
     attack: 0,
     defense: 15,
-    text: 'Alice gets +5/+5 for each creature you control.\n(2): Create either a 0/15 Shield Doll token, or a 10/5 Sword Doll token that cannot intercept. Use this ability only once each turn.',
+    text: 'Alice gets +5/+5 for each creature you control. \n (2): Create either a 0/15 Shield Doll token, or a 10/5 Sword Doll token that cannot intercept. Use this ability only once each turn.',
 },{
     name: 'Ancient Book',
     image: 'http://i.imgur.com/F9Q6hJL.jpg',
@@ -13,7 +13,7 @@ allCards = [{
     cost: 4,
     attack: 5,
     defense: 40,
-    text: 'Whenever Ancient Book attacks and deals combat damage to a creature, it deals that much damage to all other creatures that opponent controls.\nAncient Book cannot be the target of spells or abilities.',
+    text: 'Whenever Ancient Book attacks and deals combat damage to a creature, it deals that much damage to all other creatures that opponent controls. \n Ancient Book cannot be the target of spells or abilities.',
 },{
     name: 'Aya',
     image: 'http://i.imgur.com/UFLI5qa.jpg',
@@ -39,7 +39,7 @@ allCards = [{
     image: 'http://i.imgur.com/P9wrlrE.jpg',
     type: 'Spell',
     cost: 'X',
-    text: 'Choose one: Brilliant Dragon Bullet deals 2X damage to each creature your opponent controls or Brilliant Dragon Bullet deals 4X damage to target creature.\n',
+    text: 'Choose one: Brilliant Dragon Bullet deals 2X damage to each creature your opponent controls or Brilliant Dragon Bullet deals 4X damage to target creature. ',
 },{
     name: 'Byakuren',
     image: 'http://i.imgur.com/VrNDDIL.jpg',
@@ -47,13 +47,13 @@ allCards = [{
     cost: 10,
     attack: 20,
     defense: 40 ,
-    text: 'Whenever another non-token creature you control would attack, you may skip that attack this turn. If you do, Byakuren can attack an additional time this turn.\nWhenever Byakuren would be dealt damage, you may sacrifice a non-token creature. If you do, prevent that damage.\n            ',
+    text: 'Whenever another non-token creature you control would attack, you may skip that attack this turn. If you do, Byakuren can attack an additional time this turn. \n Whenever Byakuren would be dealt damage, you may sacrifice a non-token creature. If you do, prevent that damage.',
 },{
     name: 'Cat\'s Walk',
     image: 'http://i.imgur.com/HgCaqAs.jpg',
     type: 'Spell',
     cost: 1,
-    text: 'Draw 2 cards, then discard 2 cards.\n            ',
+    text: 'Draw 2 cards, then discard 2 cards.',
 },{
     name: 'Chen',
     image: 'http://i.imgur.com/YsAaoE3.jpg',
@@ -69,7 +69,7 @@ allCards = [{
     cost: 2,
     attack: 5,
     defense: 25,
-    text: 'When Cirno deals damage to a creature, that creature becomes frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s next turn).\nDuring your turn, Cirno gets +5/+0.\n',
+    text: 'When Cirno deals damage to a creature, that creature becomes frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s next turn). \n During your turn, Cirno gets +5/+0.',
 },{
     name: 'Curse of Dreams and Reality',
     image: 'http://i.imgur.com/bzOoHKj.jpg',
@@ -83,10 +83,10 @@ allCards = [{
     cost: 1,
     attack: 5,
     defense: 10,
-    text: 'When Daiyousei enters the battlefield, creatures you control heal 7 health.\n(1): Target creature heals 5 health.  Use this ability only once each turn.\n            ',
+    text: 'When Daiyousei enters the battlefield, creatures you control heal 7 health. \n (1): Target creature heals 5 health.  Use this ability only once each turn.',
 },{
     name: 'Demon Binding Array',
-    image: 'http://puu.sh/7V1ET.png',
+    image: 'http://i.imgur.com/IVM5mwa.png',
     type: 'Spell (Equip)',
     cost: 4,
     text: 'Equipped creature cannot attack or use abilities.',
@@ -95,19 +95,19 @@ allCards = [{
     image: 'http://i.imgur.com/Mko8mVb.jpg',
     type: 'Field',
     cost: 3,
-    text: 'Duration 3 (This enters the battlefield with 3 duration counters. Remove one at the start of each of your turns. When the last is removed, sacrifice this.)\nCreatures enter the battlefield frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s turn).\n            ',
+    text: 'Duration 3 (This enters the battlefield with 3 duration counters. Remove one at the start of each of your turns. When the last is removed, sacrifice this.) \n Creatures enter the battlefield frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s turn).',
 },{
     name: 'Drizzle',
     image: 'http://i.imgur.com/wj3AMPJ.png',
     type: 'Field',
     cost: 4,
-    text: 'Whenever a player casts a spell, Drizzle deals 8 damage to that player\'s opponent. If there were at least two other spells played this turn, sacrifice Drizzle.\n            ',
+    text: 'Whenever a player casts a spell, Drizzle deals 8 damage to that player\'s opponent. If there were at least two other spells played this turn, sacrifice Drizzle.',
 },{
     name: 'Eientei',
     image: 'http://i.imgur.com/Wu5INxt.jpg',
     type: 'Field',
     cost: 7,
-    text: 'The first time an opponent attacks each turn, negate the attack.\nCondition: Take over 25 damage in one turn.\n            ',
+    text: 'The first time an opponent attacks each turn, negate the attack. \n Condition: Take over 25 damage in one turn.',
 },{
     name: 'Erin',
     image: 'http://i.imgur.com/XWhhumz.jpg',
@@ -115,7 +115,7 @@ allCards = [{
     cost: 12,
     attack: 18,
     defense: 45,
-    text: 'At the end of your turn, creatures you control heal 10 health.\nWhenever a creature you control heals, that creature gets +2/+3.\n',
+    text: 'At the end of your turn, creatures you control heal 10 health. \n Whenever a creature you control heals, that creature gets +2/+3.',
 },{
     name: 'Evil Sealing Circle',
     image: 'http://i.imgur.com/fuduoi4.jpg',
@@ -135,7 +135,7 @@ allCards = [{
     image: 'http://i.imgur.com/9QP15TP.jpg',
     type: 'Spell',
     cost: 7,
-    text: 'Sacrifice all creatures you control.  You cannot play creatures this turn.\nAt the beginning of your next turn, you gain 5 power, 5 points, and you draw 3 cards.',
+    text: 'Sacrifice all creatures you control.  You cannot play creatures this turn. \n At the beginning of your next turn, you gain 5 power, 5 points, and you draw 3 cards.',
 },{
     name: 'Flandre',
     image: 'http://i.imgur.com/s3wSwcS.jpg',
@@ -152,16 +152,16 @@ allCards = [{
     text: 'Up to two target creatures are frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s next turn). Freeze Sign "Perfect Freeze" deals 18 damage to those creatures if they are already frozen.',
 },{
     name: 'Future "New History of Phantasm -Next History-"',
-    image: 'http://puu.sh/6Dcw8.png',
+    image: 'http://i.imgur.com/xKelnSA.png',
     type: 'Spell',
     cost: 4,
-    text: 'If you have attacked this turn, you cannot play this spell.  You may not attack this turn.\n            Draw 2 cards.\n            ',
+    text: 'If you have attacked this turn, you cannot play this spell.  You may not attack this turn. \n Draw 2 cards.',
 },{
     name: 'Geyser Eruption',
     image: 'http://i.imgur.com/1vCquDn.jpg',
     type: 'Spell',
     cost: 4,
-    text: 'You may sacrifice an essence instead of paying Geyser Eruption\'s power cost.\n            Geyser Eruption deals 25 damage to target creature.',
+    text: 'You may sacrifice an essence instead of paying Geyser Eruption\'s power cost. \n Geyser Eruption deals 25 damage to target creature.',
 },{
     name: 'God\'s Rice Porridge',
     image: 'http://i.imgur.com/lPzGEJF.jpg',
@@ -173,13 +173,13 @@ allCards = [{
     image: 'http://i.imgur.com/rQ2TtfY.png',
     type: 'Field',
     cost: 9,
-    text: 'Hakugyokurou enters the battlefield with 3 death counters on it.\nYou can play up to one creature card from your graveyard each turn. If a creature played this way would leave the battlefield, exile it instead and remove a death counter from Hakugyokurou.\nWhen Hakugyokurou has no death counters on it, sacrifice it.',
+    text: 'Hakugyokurou enters the battlefield with 3 death counters on it. \n You can play up to one creature card from your graveyard each turn. If a creature played this way would leave the battlefield, exile it instead and remove a death counter from Hakugyokurou. \n When Hakugyokurou has no death counters on it, sacrifice it.',
 },{
     name: 'Hakurei Shrine',
     image: 'http://i.imgur.com/HdJFGrl.png',
     type: 'Field',
     cost: 13,
-    text: 'At the end of your turn, if you control no creatures and your opponent controls at least 3 creatures, or if you have 25 or less life, you may search your or your opponent\'s deck for a card and exile it. Play the exiled card without paying for its costs. That player shuffles his or her deck.\nSkip your next turn: Destroy Hakurei Shrine. Any player may use this ability.',
+    text: 'At the end of your turn, if you control no creatures and your opponent controls at least 3 creatures, or if you have 25 or less life, you may search your or your opponent\'s deck for a card and exile it. Play the exiled card without paying for its costs. That player shuffles his or her deck. \n Skip your next turn: Destroy Hakurei Shrine. Any player may use this ability.',
 },{
     name: 'Hell\'s Wheel of Pain',
     image: 'http://i.imgur.com/kpsiayG.jpg',
@@ -199,7 +199,7 @@ allCards = [{
     cost: 8,
     attack: 20,
     defense: 35,
-    text: '(4): Put 4 age counters on target creature. That creature gets Eternity (Whenever this creature would be dealt damage or is targeted by a spell or ability, negate it and remove an age counter. When the last is removed, sacrifice this creature.)\nWhen Kaguya dies, exile her with 4 time counters. At the beginning of your turn, remove a time counter. When the last is removed, return her to her owner\'s hand.',
+    text: '(4): Put 4 age counters on target creature. That creature gets Eternity (Whenever this creature would be dealt damage or is targeted by a spell or ability, negate it and remove an age counter. When the last is removed, sacrifice this creature.) \n When Kaguya dies, exile her with 4 time counters. At the beginning of your turn, remove a time counter. When the last is removed, return her to her owner\'s hand.',
 },{
     name: 'Kanako',
     image: 'http://i.imgur.com/Q1ODNCc.jpg',
@@ -207,7 +207,7 @@ allCards = [{
     cost: 11,
     attack: 27,
     defense: 50,
-    text: 'At the beginning of your turn, put the top card of your deck into play as an essence.\nSacrifice an essence: Kanako deals 8 damage to target creature.\n',
+    text: 'At the beginning of your turn, put the top card of your deck into play as an essence. \n Sacrifice an essence: Kanako deals 8 damage to target creature.',
     triggered:{
         "upkeep": function(){ return GAME.choices.pointOrPower(this.controller, this.controller.deck.shift());}
     },
@@ -218,7 +218,7 @@ allCards = [{
     cost: 4,
     attack: 7,
     defense: 30,
-    text: 'At the end of your turn, remove the top card of a target player\'s deck.\nWhenever you have no cards in your hand, transform Keine into a 15/40 EX-Keine that has "You may cast cards removed by EX-Keine as if they were in your hand." (transformation: changes stats and abilities but keeps all equips, debuffs etc.).  Ex-Keine heals to full health.',
+    text: 'At the end of your turn, remove the top card of a target player\'s deck. \n Whenever you have no cards in your hand, transform Keine into a 15/40 EX-Keine that has "You may cast cards removed by EX-Keine as if they were in your hand." (transformation: changes stats and abilities but keeps all equips, debuffs etc.).  Ex-Keine heals to full health.',
 },{
     name: 'Koakuma',
     image: 'http://i.imgur.com/AZAPZG5.jpg',
@@ -226,7 +226,7 @@ allCards = [{
     cost: 3,
     attack: 5,
     defense: 20,
-    text: 'When you draw a card for the first time on your turn, you may pay (2). If you do, draw a card.\n',
+    text: 'When you draw a card for the first time on your turn, you may pay (2). If you do, draw a card.',
     triggered:{
         "upkeep": function(){
             GAME.promptResourcePayment("You may pay (2) to draw another card.", 2, this.controller,
@@ -242,7 +242,7 @@ allCards = [{
     cost: 9,
     attack: 15,
     defense: 45,
-    text: 'Your opponent plays with the top card of their deck revealed.\n(1): Your opponent puts the top card of their deck on the bottom of their deck.\nCards your opponent cast cost (1) more.\n',
+    text: 'Your opponent plays with the top card of their deck revealed. \n (1): Your opponent puts the top card of their deck on the bottom of their deck. \n Cards your opponent cast cost (1) more.',
 },{
     name: 'Komachi',
     image: 'http://i.imgur.com/jw5PcPT.jpg',
@@ -266,7 +266,7 @@ allCards = [{
     cost: 3,
     attack: 0,
     defense: 27,
-    text: 'Put the top card of your deck into your graveyard: Kurumi heals 5 health. You may only use this ability once each turn.\nWhen Kurumi takes damage, she gains attack equal to half the health she lost, rounded down.\n            ',
+    text: 'Put the top card of your deck into your graveyard: Kurumi heals 5 health. You may only use this ability once each turn. \n When Kurumi takes damage, she gains attack equal to half the health she lost, rounded down.',
 },{
     name: 'Letty',
     image: 'http://i.imgur.com/4Btmqxo.jpg',
@@ -274,13 +274,13 @@ allCards = [{
     cost: 3,
     attack: 5,
     defense: 27,
-    text: 'When Letty deals damage to a creature, that creature becomes frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s next turn).\n(3): Target creature becomes frozen. Use this ability only once each turn. Letty cannot attack and use this ability within the same turn.',
+    text: 'When Letty deals damage to a creature, that creature becomes frozen (they cannot use abilities, attack, or intercept until the end of their controller\'s next turn). \n (3): Target creature becomes frozen. Use this ability only once each turn. Letty cannot attack and use this ability within the same turn.',
 },{
     name: 'Lingering Cold',
     image: 'http://i.imgur.com/PwcQLVB.jpg',
     type: 'Spell (Equip)',
     cost: 2,
-    text: 'Equipped creature becomes Frozen after using an ability or after combat (they cannot use abilities, attack, or intercept until the end of their controller\'s turn).\nWhen equipped creature dies, you may return Lingering Cold to play equipped to target creature.',
+    text: 'Equipped creature becomes Frozen after using an ability or after combat (they cannot use abilities, attack, or intercept until the end of their controller\'s turn). \n When equipped creature dies, you may return Lingering Cold to play equipped to target creature.',
 },{
     name: 'Lunasa',
     image: 'http://i.imgur.com/y11NppM.jpg',
@@ -288,7 +288,7 @@ allCards = [{
     cost: 3,
     attack: 9,
     defense: 19,
-    text: 'Lunasa\'s name may be treated as "Prismriver".\nCreatures you control that have the same name as another creature you control get +3/+0.\n',
+    text: 'Lunasa\'s name may be treated as "Prismriver". \n Creatures you control that have the same name as another creature you control get +3/+0.',
 },{
     name: 'Lyrica',
     image: 'http://i.imgur.com/nOiO4Vf.jpg',
@@ -296,7 +296,7 @@ allCards = [{
     cost: 3,
     attack: 9,
     defense: 19,
-    text: 'Lyrica\'s name may be treated as "Prismriver".\nAt the end of your turn, creatures you control that have the same name as another creature you control heal 8 health.',
+    text: 'Lyrica\'s name may be treated as "Prismriver". \n At the end of your turn, creatures you control that have the same name as another creature you control heal 8 health.',
 },{
     name: 'Magic Milky Way',
     image: 'http://i.imgur.com/gaSZkvd.jpg',
@@ -318,7 +318,7 @@ allCards = [{
     cost: 5,
     attack: 5,
     defense: 20,
-    text: 'Whenever Medicine deals combat damage, if it was to a creature, that creature gains Poison 3 (Poisoned creatures lose health equal to their amount of poison at the end of each turn). Otherwise, if it was to a player, that player gains Poison 2 (at the end each turn, he or she loses life equal to his or her amount of poison).\nAt the end of your turn, creatures your opponents control gain Poison 1.\nMedicine is immune to Poison.',
+    text: 'Whenever Medicine deals combat damage, if it was to a creature, that creature gains Poison 3 (Poisoned creatures lose health equal to their amount of poison at the end of each turn). Otherwise, if it was to a player, that player gains Poison 2 (at the end each turn, he or she loses life equal to his or her amount of poison). \n At the end of your turn, creatures your opponents control gain Poison 1. \n Medicine is immune to Poison.',
 },{
     name: 'Meiling',
     image: 'http://i.imgur.com/mvkL5Dp.jpg',
@@ -326,7 +326,7 @@ allCards = [{
     cost: 3,
     attack: 9,
     defense: 35,
-    text: 'Meiling can intercept an additional time each turn. \n            Meiling\'s damage is not reduced when intercepting.',
+    text: 'Meiling can intercept an additional time each turn.  \n Meiling\'s damage is not reduced when intercepting.',
 },{
     name: 'Merlin',
     image: 'http://i.imgur.com/sR6S8Fs.jpg',
@@ -334,13 +334,13 @@ allCards = [{
     cost: 3,
     attack: 9,
     defense: 19,
-    text: 'Merlin\'s name may be treated as "Prismriver".\nCreatures you control that have the same name as another creature you control get +0/+10.',
+    text: 'Merlin\'s name may be treated as "Prismriver". \n Creatures you control that have the same name as another creature you control get +0/+10.',
 },{
     name: 'Mind Stopper',
     image: 'http://i.imgur.com/zwKCXcD.jpg',
     type: 'Spell (Equip)',
     cost: 2,
-    text: 'Equipped creature loses all abilities.\nAny other equips placed on this creature are immediately destroyed.',
+    text: 'Equipped creature loses all abilities. \n Any other equips placed on this creature are immediately destroyed.',
 },{
     name: 'Mokou',
     image: 'http://i.imgur.com/T0r3r8A.jpg',
@@ -348,7 +348,7 @@ allCards = [{
     cost: 8,
     attack: 18,
     defense: 35,
-    text: 'When Mokou dies, she deals damage equal to her power to each creature. Exile her with 4 time counters. At the beginning of your turn, remove a time counter. When the last is removed, return her to her owner\'s hand.\n',
+    text: 'When Mokou dies, she deals damage equal to her power to each creature. Exile her with 4 time counters. At the beginning of your turn, remove a time counter. When the last is removed, return her to her owner\'s hand.',
 },{
     name: 'Momiji',
     image: 'http://i.imgur.com/a9TdGpz.jpg',
@@ -376,7 +376,7 @@ allCards = [{
     image: 'http://i.imgur.com/6WGTFv8.jpg',
     type: 'Field',
     cost: 6,
-    text: 'If a source would deal damage, it deals double that damage instead.\nPay 20 life: Destroy Nuclear Furnace.  Any player may use this ability.\n            ',
+    text: 'If a source would deal damage, it deals double that damage instead. \n Pay 20 life: Destroy Nuclear Furnace.  Any player may use this ability.',
 },{
     name: 'Patchouli',
     image: 'http://i.imgur.com/hzzlXJL.jpg',
@@ -384,7 +384,7 @@ allCards = [{
     cost: 4,
     attack: 5,
     defense: 28,
-    text: 'When Patchouli enters the battlefield, look at the top three cards of your deck. You may reveal a spell card from among them and put it into your hand. Put the rest on the bottom of your deck in any order. \n            Spells you cast cost 1 less power.  This ability does not stack with other Patchoulis.',
+    text: 'When Patchouli enters the battlefield, look at the top three cards of your deck. You may reveal a spell card from among them and put it into your hand. Put the rest on the bottom of your deck in any order.  \n Spells you cast cost 1 less power.  This ability does not stack with other Patchoulis.',
 },{
     name: 'Pentagram Flight',
     image: 'http://i.imgur.com/pkEFfFO.png',
@@ -396,7 +396,7 @@ allCards = [{
     image: 'http://i.imgur.com/C8Sr2Ex.jpg',
     type: 'Spell',
     cost: 2,
-    text: 'Creatures your opponent controls gain Poison 4 (Poisoned creatures lose health equal to their amount of poison at the end of each turn).\n            ',
+    text: 'Creatures your opponent controls gain Poison 4 (Poisoned creatures lose health equal to their amount of poison at the end of each turn).',
 },{
     name: 'Nazrin',
     image: 'http://i.imgur.com/74sR1JF.jpg',
@@ -418,7 +418,7 @@ allCards = [{
     cost: 15,
     attack: 20,
     defense: 55,
-    text: 'When Reimu enters the battlefield, create a 20/20 Orb token linked to Reimu that has "As long as this creature is linked, it cannot be affected by other cards\' abilities except for the linked creature. This creature cannot be damaged. When the linked creature leaves the battlefield, sacrifice this creature."\n             If a spell or ability would destroy or exile Reimu, if Reimu is linked, sacrifice the linked orb and negate that spell or ability.\n(0): The linked orb cannot be intercepted until end of turn. Reimu cannot attack and use this ability within the same turn.',
+    text: 'When Reimu enters the battlefield, create a 20/20 Orb token linked to Reimu that has "As long as this creature is linked, it cannot be affected by other cards\' abilities except for the linked creature. This creature cannot be damaged. When the linked creature leaves the battlefield, sacrifice this creature."  \n If a spell or ability would destroy or exile Reimu, if Reimu is linked, sacrifice the linked orb and negate that spell or ability. \n (0): The linked orb cannot be intercepted until end of turn. Reimu cannot attack and use this ability within the same turn.',
 },{
     name: 'Reisen',
     image: 'http://i.imgur.com/Ir2sO0c.jpg',
@@ -426,7 +426,7 @@ allCards = [{
     cost: 5,
     attack: 12,
     defense: 27,
-    text: 'Creatures your opponents control attack each turn if able.\n            Whenever a creature your opponent controls attacks, it deals 5 damage to itself.',
+    text: 'Creatures your opponents control attack each turn if able. \n Whenever a creature your opponent controls attacks, it deals 5 damage to itself.',
 },{
     name: 'Remilia',
     image: 'http://i.imgur.com/0HxCSOw.jpg',
@@ -442,7 +442,7 @@ allCards = [{
     cost: 2,
     attack: 3,
     defense: 22,
-    text: '(1): Draw two cards.  Your opponent creates a 10/20 monster token.  You lose 5 life. You may only use this ability once each turn.\n            ',
+    text: '(1): Draw two cards.  Your opponent creates a 10/20 monster token.  You lose 5 life. You may only use this ability once each turn.',
 },{
     name: 'Rin',
     image: 'http://i.imgur.com/oXO2f48.jpg',
@@ -450,7 +450,7 @@ allCards = [{
     cost: 6,
     attack: 18,
     defense: 28,
-    text: 'Whenever a non-token card enters your graveyard from anywhere or Rin kills a creature, create a 0/5 Zombie Fairy token that cannot intercept.\nSacrifice X Zombie Fairy tokens: Return a creature that costs X from your graveyard to play. If it would leave the battlefield, exile it instead.\n            ',
+    text: 'Whenever a non-token card enters your graveyard from anywhere or Rin kills a creature, create a 0/5 Zombie Fairy token that cannot intercept. \n Sacrifice X Zombie Fairy tokens: Return a creature that costs X from your graveyard to play. If it would leave the battlefield, exile it instead.',
 },{
     name: 'Rumia',
     image: 'http://i.imgur.com/SuEi1xu.jpg',
@@ -474,7 +474,7 @@ allCards = [{
     cost: 4,
     attack: 5,
     defense: 30,
-    text: 'At the beginning of your turn, gain life equal to the number of essences you control.\n(0): Turn target non-token creature you control into an essence of your choice.',
+    text: 'At the beginning of your turn, gain life equal to the number of essences you control. \n (0): Turn target non-token creature you control into an essence of your choice.',
     triggered: {
         "upkeep": function(){this.controller.gainLife(this.controller.pointEssences.length + this.controller.powerEssences.length);}
     },
@@ -489,7 +489,7 @@ allCards = [{
     cost: 13,
     attack: 25,
     defense: 45,
-    text: 'Whenever another creature dies, choose one - Exile target card from a graveyard and Shiki gets +2/+2; or put target card in a graveyard on the bottom of your deck.\n(2), sacrifice another non-token creature: Return target creature card from your graveyard to your hand.',
+    text: 'Whenever another creature dies, choose one - Exile target card from a graveyard and Shiki gets +2/+2; or put target card in a graveyard on the bottom of your deck. \n (2), sacrifice another non-token creature: Return target creature card from your graveyard to your hand.',
 },{
     name: 'Shizuha',
     image: 'http://i.imgur.com/WkeWks3.jpg',
@@ -497,7 +497,7 @@ allCards = [{
     cost: 3,
     attack: 5,
     defense: 20,
-    text: 'When Shizuha dies, put her back into play as an essence.\n            When you play a essence, if you have already played at least 1 essence this turn, gain 1 resource of your choice.\n',
+    text: 'When Shizuha dies, put her back into play as an essence. \n When you play a essence, if you have already played at least 1 essence this turn, gain 1 resource of your choice.',
     triggered: {
         "die": function(){
             GAME.promptChoice("Turn Shizuha into what type of land?", {
@@ -514,13 +514,13 @@ allCards = [{
     cost: 7,
     attack: 10,
     defense: 45,
-    text: '(2): Shou deals 5 damage to target creature.  If this kills the creature, you gain 2 power.\n            ',
+    text: '(2): Shou deals 5 damage to target creature.  If this kills the creature, you gain 2 power.',
 },{
     name: 'Snow',
     image: 'http://i.imgur.com/kdrCarG.jpg',
     type: 'Field',
     cost: 2,
-    text: 'Whenever a creature is dealt damage, its controller puts the top card of his or her deck into his or her graveyard.\nWhenever a player is dealt damage, that player puts the top 2 cards of his or her deck into his or her graveyard.\nWhen 7 or more cards are put from a player\'s deck into their graveyard in one turn, sacrifice Snow.\n            ',
+    text: 'Whenever a creature is dealt damage, its controller puts the top card of his or her deck into his or her graveyard. \n Whenever a player is dealt damage, that player puts the top 2 cards of his or her deck into his or her graveyard. \n When 7 or more cards are put from a player\'s deck into their graveyard in one turn, sacrifice Snow.',
 },{
     name: 'Straw Doll',
     image: 'http://i.imgur.com/k9T6z4R.jpg',
@@ -536,13 +536,13 @@ allCards = [{
     cost: 8,
     attack: 20,
     defense: 35,
-    text: 'Discard a creature card: Suika deals damage to target creature equal to the discarded card\'s attack. Use this ability only once each turn.\nDiscard a non-creature card: Suika heals X life and gets +(X+15)/+0 until end of turn, where X is the cost of the discarded card. Use this ability only once each turn.',
+    text: 'Discard a creature card: Suika deals damage to target creature equal to the discarded card\'s attack. Use this ability only once each turn. \n Discard a non-creature card: Suika heals X life and gets +(X+15)/+0 until end of turn, where X is the cost of the discarded card. Use this ability only once each turn.',
 },{
     name: 'Sunshower',
     image: 'http://i.imgur.com/BKT9tG7.jpg',
     type: 'Field',
     cost: 3,
-    text: 'Creatures deal no damage when intercepting.\nWhen a creature intercepts, if there was already an intercept this turn, sacrifice Sunshower after combat.\n            ',
+    text: 'Creatures deal no damage when intercepting. \n When a creature intercepts, if there was already an intercept this turn, sacrifice Sunshower after combat.',
 },{
     name: 'Suwako',
     image: 'http://i.imgur.com/LFgNBUO.jpg',
@@ -550,13 +550,13 @@ allCards = [{
     cost: 10,
     attack: 20,
     defense: 50,
-    text: 'At the end of your turn, if Suwako did not attack this turn, she heals 10 health.\n(1), put a card from your hand down as an essence: Return target essence you control to your hand.\n',
+    text: 'At the end of your turn, if Suwako did not attack this turn, she heals 10 health. \n (1), put a card from your hand down as an essence: Return target essence you control to your hand.',
 },{
     name: 'Sweet Poison',
     image: 'http://i.imgur.com/pVSrqL9.jpg',
     type: 'Spell',
     cost: 2,
-    text: 'Target creature gets +7/+0 and Poison 5 (Poisoned creatures lose health equal to their amount of poison at the end of each turn).\n            ',
+    text: 'Target creature gets +7/+0 and Poison 5 (Poisoned creatures lose health equal to their amount of poison at the end of each turn).',
 },{
     name: 'Sword of Scarlet Perception',
     image: 'http://i.imgur.com/RpBZK1o.jpg',
@@ -574,7 +574,7 @@ allCards = [{
     image: 'http://i.imgur.com/Prj0rQv.jpg',
     type: 'Spell',
     cost: 3,
-    text: 'You may pay an additional 9 power when you cast this spell.\n            Select a creature from your graveyard and put it into your hand.  If you paid the additional cost, put it onto the battlefield instead.',
+    text: 'You may pay an additional 9 power when you cast this spell. \n Select a creature from your graveyard and put it into your hand.  If you paid the additional cost, put it onto the battlefield instead.',
 },{
     name: 'Total Purification',
     image: 'http://i.imgur.com/X6932IL.jpg',
@@ -586,7 +586,7 @@ allCards = [{
     image: 'http://i.imgur.com/1mblWkp.jpg',
     type: 'Spell',
     cost: 0,
-    text: 'Until your next turn, damage dealt during an interception by target creature is equal to its attack.  That creature can intercept an additional time.\nThat creature gets +0/+10.\n',
+    text: 'Until your next turn, damage dealt during an interception by target creature is equal to its attack.  That creature can intercept an additional time. \n That creature gets +0/+10.',
 },{
     name: 'Unzan',
     image: 'http://i.imgur.com/nk4oRi6.jpg',
@@ -594,7 +594,7 @@ allCards = [{
     cost: 8,
     attack: 30,
     defense: 45,
-    text: 'Unzan cannot attack the turn he enters the battlefield.\n            After combat, Unzan cannot attack or intercept until the end of the next turn.',
+    text: 'Unzan cannot attack the turn he enters the battlefield. \n After combat, Unzan cannot attack or intercept until the end of the next turn.',
 },{
     name: 'Utsuho',
     image: 'http://i.imgur.com/nmjKIpr.jpg',
@@ -620,7 +620,7 @@ allCards = [{
     image: 'http://i.imgur.com/EWbQwYo.jpg',
     type: 'Spell',
     cost: 3,
-    text: 'You may play an additional essence this turn.\nDraw a card.',
+    text: 'You may play an additional essence this turn. \n Draw a card.',
 },{
     name: 'Wood Fairy',
     image: 'http://i.imgur.com/683GODc.jpg',
@@ -644,7 +644,7 @@ allCards = [{
     cost: 5,
     attack: 5,
     defense: 30,
-    text: 'Whenever a poisoned creature your opponent controls dies, you may have target creature gain Poison 5 (Poisoned creatures lose health equal to their amount of poison at the end of each turn).\n(3): Target creature gains Poison 4.',
+    text: 'Whenever a poisoned creature your opponent controls dies, you may have target creature gain Poison 5 (Poisoned creatures lose health equal to their amount of poison at the end of each turn). \n (3): Target creature gains Poison 4.',
 },{
     name: 'Youkai Mountain',
     image: 'http://i.imgur.com/Cppzjz5.jpg',
@@ -674,7 +674,7 @@ allCards = [{
     cost: 6,
     attack: 5,
     defense: 40,
-    text: 'Whenever Yuugi would be dealt damage, prevent 5 of that damage.\n            Whenever Yuugi is dealt (more than 0) damage, she gets +5/+0.',
+    text: 'Whenever Yuugi would be dealt damage, prevent 5 of that damage. \n Whenever Yuugi is dealt (more than 0) damage, she gets +5/+0.',
 },{
     name: 'Yuuka',
     image: 'http://i.imgur.com/G3tsKAG.jpg',
@@ -690,7 +690,7 @@ allCards = [{
     cost: 9,
     attack: 13,
     defense: 50,
-    text: 'At the beginning of each turn or whenever a non-token creature dies, create a 0/1 Ghost token that cannot intercept and has "Sacrifice 7 ghosts: Create a Saigyou Ayakashi token".\nSacrifice a Ghost token: Yuyuko heals 8 health.',
+    text: 'At the beginning of each turn or whenever a non-token creature dies, create a 0/1 Ghost token that cannot intercept and has "Sacrifice 7 ghosts: Create a Saigyou Ayakashi token". \n Sacrifice a Ghost token: Yuyuko heals 8 health.',
     triggered: {
         "upkeep": function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));},
         "oppupkeep":  function() {this.controller.addToCreatures(CardUtils.createCard("Ghost"));}    
@@ -726,7 +726,7 @@ allTokens = [{
     type: 'Token',
     attack: 0,
     defense: 1,
-    text: 'Ghost cannot intercept.\n			Sacrifice 7 Ghosts: Create a 0/80 Saigyou Ayakashi token that cannot be targeted by spells or abilities, cannot be destroyed outside of combat, cannot be protected by intercepts and has "When this creature enters the battlefield, return all creatures in your graveyard to play. If a non-token creature you control would die, exile it instead. Return it to its owner\'s hand at the end of the turn."',
+    text: 'Ghost cannot intercept. \n Sacrifice 7 Ghosts: Create a 0/80 Saigyou Ayakashi token that cannot be targeted by spells or abilities, cannot be destroyed outside of combat, cannot be protected by intercepts and has "When this creature enters the battlefield, return all creatures in your graveyard to play. If a non-token creature you control would die, exile it instead. Return it to its owner\'s hand at the end of the turn."',
 },{
     name: 'Master Spark',
     image: 'http://i.imgur.com/sbZc4Np.jpg',
@@ -753,7 +753,7 @@ allTokens = [{
     type: 'Token',
     attack: 0,
     defense: 80,
-    text: 'Saigyou Ayakashi cannot be targeted by spells or abilities, cannot intercept, cannot be destroyed outside of combat and cannot be protected by intercepts.\nWhen Saigyou Ayakashi enters the battlefield, return all creatures in your graveyard to play.\nIf a non-token creature you control would die, exile it instead. Return it to its owner\'s hand at the end of the turn.',
+    text: 'Saigyou Ayakashi cannot be targeted by spells or abilities, cannot intercept, cannot be destroyed outside of combat and cannot be protected by intercepts. \n When Saigyou Ayakashi enters the battlefield, return all creatures in your graveyard to play. \n If a non-token creature you control would die, exile it instead. Return it to its owner\'s hand at the end of the turn.',
 },{
     name: 'Shield Doll',
     image: 'http://i.imgur.com/32sBu26.jpg',

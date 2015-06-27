@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<input id='cardName' placeholder='card name here...'/>
+<input id='sizer' placeholder='card height here (pixels)...'/>
+<button onclick='generate()'>Generate card</button>
+
+
+<br>
+<canvas height='800' width='569.6' id='card'></canvas>
+
+
+<script src="/jsoncards.js"></script>
+<script src="/lib/underscore-min.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script>
+
+var factor = 800/2000;
+
+function wrapText(context, text, x, y, maxWidth, lineHeight) {
+        var words = text.split(' ');
+        var line = '';
+
+        for(var n = 0; n < words.length; n++) {
+          var testLine = line + words[n] + ' ';
+          var metrics = context.measureText(testLine);
+          var testWidth = metrics.width;
+          if ((testWidth > maxWidth || words[n] == '\n') && n > 0) {
+            context.fillText(line, x, y);
+            line = words[n] + (words[n] === '\n' ? '' : ' ');
+            y += (words[n] === '\n' ? 2 * lineHeight : lineHeight);;
+          }
+          else {
+            line = testLine;
+          }
+        }
+        context.fillText(line, x, y);
+}
+
+
+function repeatedDrawing(index){
+    var sendToServer = function(){
+    var imgData = document.getElementById('card').toDataURL();
+    var name = allCards[index].name;
+    console.log(index);
+    $.post("/imgsave", JSON.stringify({name: name, img: imgData}), function(){
+        repeatedDrawing(index + 1);
+    });
+
+    }
+
+    drawCard('800px', allCards[index], sendToServer);
+
+
+}
+
+function drawCard(size, template, fn){
+    var cardArt = new Image();
+    cardArt.crossOrigin="Anonymous";
+    cardArt.src = template.image;
+
+    var cardBase = new Image();
+    cardBase.crossOrigin="Anonymous";
+    cardBase.src = template.type === "Creature" ? "/images/cardBase.png" : (template.type === "Spell" ? "/images/spellBase.png" : "/images/fieldBase.png");
+
+    console.log(cardArt);
+
+    console.log(template);
+    var ctx = document.getElementById('card').getContext('2d');
+
+    var ic = imageCollector(2, function(){
+        ctx.drawImage(cardBase, 0, 0, 1424 * factor, 2000 * factor );
+        ctx.drawImage(cardArt, factor * 32,factor * 180,factor * (1394-32),factor * (1151-180));
+
+        ctx.font = "bold " + factor * 124 + "px sans-serif";
+        ctx.textBaseline = "top";
+        ctx.fillText(template.name, factor * 190, factor * 20);  // Name
+        ctx.fillText(template.cost, factor * 1250, factor * 30); // Cost
+
+    if (template.type === "Creature"){
+        ctx.fillText(template.attack, factor * 710, factor * 1825);  // Attack
+        ctx.fillText(template.defense, factor * 1111, factor * 1825); // Health
+    }
+
+    // Switch to smaller font for rules text
+        ctx.font = "bold " + factor * 50 + "px sans-serif";
+        wrapText(ctx, template.text, factor * 100, factor * 1225, factor * 1200, factor * 50);
+        if (fn) fn();
+    });
+    
+    document.getElementById('card').style.height = size;
+
+    cardArt.onload = ic;
+    cardBase.onload = ic;
+
+
+}
+
+function generate(){
+    var name = document.getElementById('cardName').value;
+    var template = _.find(allCards, function(c) {return c.name === name;});
+    var size = document.getElementById('sizer').value + 'px';
+    drawCard(size, template);
+}
+
+var imageCollector = (function(expectedCount, completeFn){
+  var receivedCount = 0;
+  var expectedCount = expectedCount;
+  return function(){
+    if(++receivedCount == expectedCount){
+      completeFn();
+    }
+  };
+});
+
+
+</script>
+</html>

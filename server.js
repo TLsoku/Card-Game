@@ -102,6 +102,27 @@ function handler (req, res) {
       }
       return;
   }
+  if (pathname == "/imgsave") {
+      if (req.method == 'POST') {
+          console.log(ip + "saved an image");
+
+          req.on('data', function(chunk) {
+                  req.content = (req.content ? req.content + chunk : chunk);
+                  });
+
+          req.on('end', function() {
+                  // empty 200 OK response for now
+                var info = JSON.parse(req.content.toString());
+                var data = info.img.replace(/^data:image\/\w+;base64,/, "");
+                var buf = new Buffer(data, 'base64');
+                console.log(buf);
+                fs.writeFile('images/premade/' + info.name.replace(/ /g, '_') + '.png', buf, function(){console.log('done saving ' + info.name);});
+                res.writeHead(200, "OK", {'Content-Type': 'text/html'});
+                res.end();
+              });
+      }
+      return;
+  }
     try {
         var data = fs.readFileSync(__dirname + pathname);
     } catch(e) {
